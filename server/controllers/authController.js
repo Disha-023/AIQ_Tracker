@@ -50,6 +50,13 @@ async function login(req, res) {
       });
     }
 
+    if (user.status && user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is inactive. Please contact Hospital Administration.'
+      });
+    }
+
     if (req.resetAttempts) req.resetAttempts();
 
     const token = authService.generateToken(user);
@@ -65,7 +72,8 @@ async function login(req, res) {
         email: user.email,
         mobile: user.mobile,
         department: user.department,
-        role: user.role
+        role: user.role,
+        status: user.status || 'active'
       }
     });
   } catch (err) {

@@ -145,7 +145,7 @@ export default function ReceptionistDashboard() {
           </Link>
 
           <Link
-            to="/reception/tokens"
+            to="/reception/queue"
             className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs hover:border-blue-400 transition-all group flex items-center justify-between"
           >
             <div className="flex items-center gap-3">

@@ -58,6 +58,20 @@ const mockUserStore = [
     mfa_enabled: true,
     created_at: new Date(),
     last_login: null
+  },
+  {
+    id: 'REC003',
+    staff_id: 'REC003',
+    name: 'Inactive Staff User',
+    email: 'inactive@aiqtracker.com',
+    mobile: '9876543299',
+    department: 'OPD Front Desk',
+    password_hash: RECEPTIONIST_HASH,
+    role: 'receptionist',
+    status: 'inactive',
+    mfa_enabled: false,
+    created_at: new Date(),
+    last_login: null
   }
 ];
 

@@ -8,14 +8,19 @@ export default function ProtectedRoute({ allowedRoles }) {
 
   // 1. Verify authentication
   if (!isAuthenticated) {
+    if (allowedRoles?.includes('admin')) {
+      return <Navigate to="/admin/login" replace />;
+    }
+    if (allowedRoles?.includes('receptionist')) {
+      return <Navigate to="/staff/login" replace />;
+    }
     return <Navigate to="/login" replace />;
   }
 
   // 2. Strict Role-Based Access Control (RBAC) evaluation
-  // Role is read strictly from AuthContext state (never from URL parameters or request bodies)
+  // Role is read strictly from AuthContext state (never from URL parameters or frontend selectors)
   if (!hasRolePermission(role, allowedRoles)) {
-    const targetRoute = getDefaultRoleRoute(role);
-    return <Navigate to={targetRoute} replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <Outlet />;

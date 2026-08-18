@@ -60,9 +60,10 @@ async function findUserByIdentifier(identifier) {
   // 2. Fallback to mockUserStore
   const matched = mockUserStore.find(
     (u) =>
-      u.email.toLowerCase() === trimmed ||
-      (u.staff_id && u.staff_id.toLowerCase() === trimmed) ||
-      u.mobile === trimmed
+      (u.email && u.email.trim().toLowerCase() === trimmed) ||
+      (u.staff_id && u.staff_id.trim().toLowerCase() === trimmed) ||
+      (u.id && u.id.trim().toLowerCase() === trimmed) ||
+      (u.mobile && u.mobile.trim() === trimmed)
   );
 
   return matched || null;

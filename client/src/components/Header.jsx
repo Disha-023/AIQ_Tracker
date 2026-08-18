@@ -71,6 +71,14 @@ export default function Header() {
             >
               About
             </a>
+            <Link
+              to="/staff"
+              className={`text-sm font-medium transition-colors ${
+                isActive('/staff') ? 'text-teal-700 font-semibold' : 'text-slate-600 hover:text-teal-600'
+              }`}
+            >
+              Staff Portal
+            </Link>
           </nav>
 
           {/* Desktop Right Side Auth State */}
@@ -162,6 +170,15 @@ export default function Header() {
             >
               About
             </a>
+            <Link
+              to="/staff"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`px-3 py-2 rounded-md text-sm font-medium ${
+                isActive('/staff') ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              Staff Portal
+            </Link>
           </nav>
 
           <div className="pt-3 border-t border-slate-200 flex flex-col gap-2">

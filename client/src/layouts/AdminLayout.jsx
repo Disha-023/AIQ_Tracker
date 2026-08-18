@@ -5,16 +5,14 @@ import {
   LayoutDashboard,
   Users,
   Stethoscope,
-  UserCheck,
-  Calendar,
-  Activity,
   BarChart3,
   Bell,
   Settings,
   User,
   LogOut,
   Menu,
-  X
+  X,
+  Building2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { adminMockData } from '../data/adminMockData';
@@ -34,13 +32,11 @@ export default function AdminLayout() {
 
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
-    { label: 'Staff Management', path: '/admin/staff', icon: Users },
     { label: 'Doctors', path: '/admin/doctors', icon: Stethoscope },
-    { label: 'Patients', path: '/admin/patients', icon: UserCheck },
-    { label: 'Appointments', path: '/admin/appointments', icon: Calendar },
-    { label: 'Queue Monitoring', path: '/admin/queue', icon: Activity },
+    { label: 'Receptionists / Staff', path: '/admin/staff', icon: Users },
+    { label: 'Departments / OPD', path: '/admin/departments', icon: Building2 },
     { label: 'Reports & Analytics', path: '/admin/reports', icon: BarChart3 },
-    { label: 'Notifications', path: '/admin/notifications', icon: Bell, badge: '2' },
+    { label: 'Notifications', path: '/admin/notifications', icon: Bell, badge: '3' },
     { label: 'Settings', path: '/admin/settings', icon: Settings },
     { label: 'Profile', path: '/admin/profile', icon: User }
   ];

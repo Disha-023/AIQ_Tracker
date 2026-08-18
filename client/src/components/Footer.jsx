@@ -54,13 +54,13 @@ export default function Footer() {
             <h4 className="text-white text-sm font-semibold mb-4 tracking-wider uppercase">Hospital Portals</h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <Link to="/patient/dashboard" className="hover:text-teal-400 transition-colors">Patient Portal</Link>
+                <Link to="/login" className="hover:text-teal-400 transition-colors">Patient Portal</Link>
               </li>
               <li>
-                <Link to="/reception/dashboard" className="hover:text-teal-400 transition-colors">Reception Desk</Link>
+                <Link to="/staff-login" className="hover:text-teal-400 transition-colors">Hospital Staff Portal</Link>
               </li>
               <li>
-                <Link to="/admin/dashboard" className="hover:text-teal-400 transition-colors">Admin Control</Link>
+                <Link to="/admin-login" className="hover:text-teal-400 transition-colors">Administration Portal</Link>
               </li>
             </ul>
           </div>

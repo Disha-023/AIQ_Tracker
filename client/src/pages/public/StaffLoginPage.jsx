@@ -5,10 +5,10 @@ import { useAuth } from '../../context/AuthContext';
 
 export default function StaffLoginPage() {
   const navigate = useNavigate();
-  const { initiateStaffLogin } = useAuth();
+  const { loginStaff } = useAuth();
 
-  const [identifier, setIdentifier] = useState('');
-  const [password, setPassword] = useState('');
+  const [identifier, setIdentifier] = useState('REC001');
+  const [password, setPassword] = useState('reception123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
@@ -17,16 +17,15 @@ export default function StaffLoginPage() {
     e.preventDefault();
 
     if (!identifier.trim()) {
-      setError('Invalid staff credentials.');
+      setError('Please enter your Staff ID or official email.');
       return;
     }
     if (!password.trim()) {
-      setError('Invalid staff credentials.');
+      setError('Please enter your password.');
       return;
     }
 
-    // Step 1: Verify staff credentials & initiate MFA
-    const result = initiateStaffLogin(identifier, password);
+    const result = loginStaff(identifier, password);
 
     if (!result.success) {
       setError(result.message || 'Invalid staff credentials.');
@@ -35,8 +34,14 @@ export default function StaffLoginPage() {
 
     setError('');
 
-    // Credentials verified -> Proceed to Step 2: MFA Verification (/staff/verify)
-    navigate('/staff/verify');
+    const userRole = result.user.role;
+    if (userRole === 'receptionist') {
+      navigate('/reception/dashboard');
+    } else if (userRole === 'admin') {
+      navigate('/admin/dashboard');
+    } else {
+      navigate('/');
+    }
   };
 
   return (
@@ -50,10 +55,10 @@ export default function StaffLoginPage() {
           </div>
           <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[11px] font-bold border border-slate-200 mb-2">
             <Lock className="w-3 h-3 text-slate-500" />
-            Authorized Personnel Only
+            Authorized Hospital Personnel Only
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Hospital Staff Login</h2>
-          <p className="text-sm text-slate-500 mt-1">Sign in with your Staff ID or assigned hospital email</p>
+          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Hospital Staff Portal</h2>
+          <p className="text-xs text-slate-500 mt-1 font-medium">Authorized hospital personnel only.</p>
         </div>
 
         {/* Error Alert */}
@@ -68,14 +73,14 @@ export default function StaffLoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1">
-              Staff ID / Official Email
+              Official Staff Email / Employee ID
             </label>
             <input
               type="text"
               required
               value={identifier}
               onChange={(e) => { setIdentifier(e.target.value); if (error) setError(''); }}
-              placeholder="e.g. REC001, ADM001, or receptionist@aiqtracker.com"
+              placeholder="e.g. REC001 or receptionist@aiqtracker.com"
               className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-slate-900 focus:bg-white"
             />
           </div>
@@ -127,13 +132,13 @@ export default function StaffLoginPage() {
             className="w-full py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm rounded-lg shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
             <ShieldCheck className="w-4 h-4 text-teal-400" />
-            Continue
+            Sign In to Staff Portal
           </button>
         </form>
 
         {/* Navigation Shortcuts */}
         <div className="mt-6 pt-6 border-t border-slate-200 space-y-3 text-center">
-          <p className="text-sm text-slate-600">
+          <p className="text-xs text-slate-600">
             Looking for Patient Portal?{' '}
             <Link to="/login" className="font-semibold text-teal-700 hover:underline">
               Patient Login
@@ -142,11 +147,11 @@ export default function StaffLoginPage() {
 
           <div>
             <Link
-              to="/staff"
+              to="/"
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              Back to Staff Portal Hub
+              Return to Home
             </Link>
           </div>
         </div>

@@ -15,7 +15,9 @@ import {
   Brain,
   Car,
   ChevronRight,
-  TrendingDown
+  TrendingDown,
+  Building2,
+  ShieldAlert
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -77,6 +79,25 @@ export default function LandingPage() {
                   <Clock className="w-4 h-4 text-teal-600" />
                   Join Walk-in Queue
                 </button>
+              </div>
+
+              {/* Separate Professional Links for Hospital Staff & Admin Portals */}
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-4 text-xs font-semibold text-slate-500 border-t border-slate-100">
+                <span className="text-slate-400 font-medium">Hospital Personnel:</span>
+                <Link
+                  to="/staff-login"
+                  className="inline-flex items-center gap-1.5 text-slate-700 hover:text-teal-700 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200"
+                >
+                  <Building2 className="w-3.5 h-3.5 text-teal-600" />
+                  Hospital Staff Portal &rarr;
+                </Link>
+                <Link
+                  to="/admin-login"
+                  className="inline-flex items-center gap-1.5 text-slate-700 hover:text-purple-700 transition-colors bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5 text-purple-600" />
+                  Administration Portal &rarr;
+                </Link>
               </div>
             </div>
 

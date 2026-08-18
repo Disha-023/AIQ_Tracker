@@ -16,11 +16,11 @@ export default function StaffPortalPage() {
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
             <Lock className="w-3.5 h-3.5 text-slate-500" />
-            Authorized Hospital Personnel Only
+            Authorized hospital personnel only.
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Hospital Staff Portal</h1>
           <p className="text-sm text-slate-500 max-w-md mx-auto">
-            Secure entry point for Receptionists and Hospital Administrators to manage OPD hospital operations.
+            Access is restricted to registered hospital staff. Secure entry point for Receptionists and Hospital Administrators.
           </p>
         </div>
 
@@ -28,7 +28,7 @@ export default function StaffPortalPage() {
         <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-xs text-amber-800 flex items-start gap-2.5">
           <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
           <span>
-            Staff accounts are authorized credentials provisioned exclusively by <strong>Hospital Administration</strong>. Public self-registration for staff accounts is disabled.
+            Staff accounts are authorized credentials provisioned exclusively by <strong>Hospital Administration</strong>. Public staff registration is disabled.
           </span>
         </div>
 
@@ -57,15 +57,23 @@ export default function StaffPortalPage() {
 
         </div>
 
-        {/* Primary Action Button */}
-        <div className="pt-2">
+        {/* Primary Action Buttons */}
+        <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <button
             onClick={() => navigate('/staff/login')}
-            className="w-full py-3.5 px-6 bg-slate-900 hover:bg-slate-800 text-white font-bold text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full py-3.5 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
           >
-            <ShieldCheck className="w-4 h-4 text-teal-400" />
-            Continue to Staff Login
+            <Users className="w-4 h-4 text-teal-400" />
+            Receptionist Login
             <ArrowRight className="w-4 h-4 text-slate-400" />
+          </button>
+          <button
+            onClick={() => navigate('/admin/login')}
+            className="w-full py-3.5 px-4 bg-purple-900 hover:bg-purple-800 text-white font-bold text-xs sm:text-sm rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer border border-purple-800"
+          >
+            <ShieldAlert className="w-4 h-4 text-purple-300" />
+            Administrator Login
+            <ArrowRight className="w-4 h-4 text-purple-300" />
           </button>
         </div>
 

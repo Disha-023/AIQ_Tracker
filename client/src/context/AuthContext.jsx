@@ -5,42 +5,43 @@ const AuthContext = createContext(null);
 const AUTH_STORAGE_KEY = 'aiq_tracker_auth_user';
 const REGISTERED_USERS_KEY = 'aiq_tracker_registered_users';
 
-// Development Mock Staff & Patient Accounts
+// Development Mock Accounts with Strict Roles & Account Statuses
 const MOCK_ACCOUNTS = [
   {
     id: 'PAT001',
     email: 'patient@example.com',
     mobile: '9876543210',
     name: 'Nisha Sharma',
-    role: 'patient'
+    role: 'patient',
+    status: 'active',
+    password: 'patient123'
   },
   {
     id: 'REC001',
     email: 'receptionist@aiqtracker.com',
     mobile: '9876543211',
     name: 'Sarah Jenkins',
-    role: 'receptionist'
-  },
-  {
-    id: 'REC002',
-    email: 'reception@example.com',
-    mobile: '9876543213',
-    name: 'Sarah Jenkins',
-    role: 'receptionist'
+    role: 'receptionist',
+    status: 'active',
+    password: 'reception123'
   },
   {
     id: 'ADM001',
     email: 'admin@aiqtracker.com',
     mobile: '9876543212',
     name: 'Dr. Robert Vance',
-    role: 'admin'
+    role: 'admin',
+    status: 'active',
+    password: 'admin123'
   },
   {
-    id: 'ADM002',
-    email: 'admin@example.com',
-    mobile: '9876543214',
-    name: 'Dr. Robert Vance',
-    role: 'admin'
+    id: 'REC003',
+    email: 'inactive@aiqtracker.com',
+    mobile: '9876543299',
+    name: 'Inactive Staff User',
+    role: 'receptionist',
+    status: 'inactive',
+    password: 'reception123'
   }
 ];
 
@@ -72,68 +73,62 @@ export function AuthProvider({ children }) {
   const getRegisteredUsers = () => {
     try {
       const stored = localStorage.getItem(REGISTERED_USERS_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
+      if (!stored) return [];
+      const parsed = JSON.parse(stored);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+      console.error('Failed to read registered users from localStorage', err);
       return [];
     }
   };
 
   /**
-   * General Login (Patient & direct auth)
+   * Account-driven Login (Role comes strictly from authenticated record)
    */
   const login = (identifier = '', password = '') => {
-    const trimmed = identifier.trim().toLowerCase();
+    const trimmed = identifier ? String(identifier).trim().toLowerCase() : '';
 
-    if (!trimmed) {
-      return { success: false, message: 'Invalid email or password.' };
+    if (!trimmed || !password) {
+      return { success: false, message: 'Please enter both your email/mobile and password.' };
     }
 
     const registeredUsers = getRegisteredUsers();
 
-    let matchedAccount = registeredUsers.find(
-      (u) =>
-        u.email.toLowerCase() === trimmed ||
-        (u.id && u.id.toLowerCase() === trimmed) ||
-        (u.mobile && u.mobile.trim() === trimmed)
-    );
+    const matchesUser = (u) => {
+      if (!u) return false;
+      const uEmail = u.email ? String(u.email).trim().toLowerCase() : '';
+      const uId = u.id ? String(u.id).trim().toLowerCase() : '';
+      const uStaffId = u.staff_id ? String(u.staff_id).trim().toLowerCase() : '';
+      const uMobile = u.mobile ? String(u.mobile).trim() : '';
+
+      return uEmail === trimmed || uId === trimmed || uStaffId === trimmed || uMobile === trimmed;
+    };
+
+    let matchedAccount = registeredUsers.find(matchesUser);
 
     if (!matchedAccount) {
-      matchedAccount = MOCK_ACCOUNTS.find(
-        (acc) =>
-          acc.email.toLowerCase() === trimmed ||
-          acc.id.toLowerCase() === trimmed ||
-          acc.mobile === trimmed
-      );
+      matchedAccount = MOCK_ACCOUNTS.find(matchesUser);
     }
 
     if (!matchedAccount) {
-      let role = 'patient';
-      let name = identifier.split('@')[0];
+      return { success: false, message: 'Invalid credentials. Please check your details and try again.' };
+    }
 
-      if (trimmed.includes('reception') || trimmed.includes('rec')) {
-        role = 'receptionist';
-        name = 'Hospital Receptionist';
-      } else if (trimmed.includes('admin') || trimmed.includes('adm')) {
-        role = 'admin';
-        name = 'Hospital Administrator';
-      } else {
-        name = name.charAt(0).toUpperCase() + name.slice(1);
-      }
+    if (matchedAccount.password && matchedAccount.password !== password) {
+      return { success: false, message: 'Invalid credentials. Please check your details and try again.' };
+    }
 
-      matchedAccount = {
-        id: role === 'receptionist' ? 'REC001' : role === 'admin' ? 'ADM001' : 'PAT001',
-        name,
-        email: identifier.includes('@') ? identifier : `${identifier}@aiqtracker.com`,
-        role
-      };
+    if (matchedAccount.status && matchedAccount.status !== 'active') {
+      return { success: false, message: 'Account is inactive. Please contact Hospital Administration.' };
     }
 
     const userData = {
-      id: matchedAccount.id || 'USR-01',
+      id: matchedAccount.id,
       name: matchedAccount.name,
       email: matchedAccount.email,
       mobile: matchedAccount.mobile,
-      role: matchedAccount.role,
+      role: matchedAccount.role || 'patient',
+      status: matchedAccount.status || 'active',
       loggedInAt: new Date().toISOString()
     };
 
@@ -142,71 +137,69 @@ export function AuthProvider({ children }) {
   };
 
   /**
+   * Direct Staff Login Verification
+   */
+  const loginStaff = (identifier = '', password = '') => {
+    const res = login(identifier, password);
+    if (!res.success) return res;
+
+    if (res.user.role === 'patient') {
+      setUser(null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return { success: false, message: 'Patient accounts cannot log in through the Staff Portal.' };
+    }
+
+    if (res.user.status && res.user.status !== 'active') {
+      setUser(null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return { success: false, message: 'Account is inactive. Please contact Hospital Administration.' };
+    }
+
+    return res;
+  };
+
+  /**
+   * Direct Admin Login Verification
+   */
+  const loginAdmin = (identifier = '', password = '') => {
+    const res = login(identifier, password);
+    if (!res.success) return res;
+
+    if (res.user.role !== 'admin') {
+      setUser(null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return { success: false, message: 'Access denied. Dedicated to authorized hospital administrators only.' };
+    }
+
+    if (res.user.status && res.user.status !== 'active') {
+      setUser(null);
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      return { success: false, message: 'Account is inactive. Please contact Hospital Administration.' };
+    }
+
+    return res;
+  };
+
+  /**
    * Step 1: Initiate Staff Login & Verify Credentials (MFA Trigger)
    */
   const initiateStaffLogin = (identifier = '', password = '') => {
-    if (failedAttempts >= 3) {
+    if (failedAttempts >= 5) {
       return {
         success: false,
         message: 'Too many unsuccessful attempts. Please try again later.'
       };
     }
 
-    const trimmed = identifier.trim().toLowerCase();
-
-    if (!trimmed) {
+    const res = loginStaff(identifier, password);
+    if (!res.success) {
       setFailedAttempts((prev) => prev + 1);
-      return { success: false, message: 'Invalid staff credentials.' };
+      return res;
     }
 
-    const registeredUsers = getRegisteredUsers();
-
-    let matchedAccount = registeredUsers.find(
-      (u) =>
-        u.email.toLowerCase() === trimmed ||
-        (u.id && u.id.toLowerCase() === trimmed) ||
-        (u.mobile && u.mobile.trim() === trimmed)
-    );
-
-    if (!matchedAccount) {
-      matchedAccount = MOCK_ACCOUNTS.find(
-        (acc) =>
-          acc.email.toLowerCase() === trimmed ||
-          acc.id.toLowerCase() === trimmed ||
-          acc.mobile === trimmed
-      );
-    }
-
-    if (!matchedAccount) {
-      // Role inference fallback for staff testing
-      let role = 'receptionist';
-      let name = 'Hospital Staff';
-
-      if (trimmed.includes('admin') || trimmed.includes('adm')) {
-        role = 'admin';
-        name = 'Hospital Administrator';
-      }
-
-      matchedAccount = {
-        id: role === 'admin' ? 'ADM001' : 'REC001',
-        name,
-        email: identifier.includes('@') ? identifier : `${identifier}@aiqtracker.com`,
-        role
-      };
-    }
-
-    // Credentials verified -> reset failures & save pending session for OTP verification
     setFailedAttempts(0);
-    const pendingData = {
-      id: matchedAccount.id,
-      name: matchedAccount.name,
-      email: matchedAccount.email,
-      mobile: matchedAccount.mobile,
-      role: matchedAccount.role
-    };
-
-    setPendingStaffMfa(pendingData);
-    return { success: true, requiresMfa: true };
+    setPendingStaffMfa(res.user);
+    return { success: true, requiresMfa: true, user: res.user };
   };
 
   /**
@@ -237,42 +230,55 @@ export function AuthProvider({ children }) {
     localStorage.removeItem(AUTH_STORAGE_KEY);
   };
 
+  /**
+   * Register Patient (Only creates role = "patient" accounts)
+   */
   const registerPatient = (patientData) => {
+    const cleanEmail = patientData.email ? String(patientData.email).trim().toLowerCase() : '';
+    const cleanMobile = patientData.mobileNumber ? String(patientData.mobileNumber).trim() : '';
+    const cleanName = patientData.fullName ? String(patientData.fullName).trim() : 'Patient User';
+    const cleanPassword = patientData.password ? String(patientData.password) : '';
+
+    if (!cleanEmail && !cleanMobile) {
+      return { success: false, message: 'An email address or mobile number is required to register.' };
+    }
+
     const newPatientUser = {
       id: `PAT-${Math.floor(1000 + Math.random() * 9000)}`,
-      name: patientData.fullName || 'Nisha Sharma',
-      email: patientData.email,
-      mobile: patientData.mobileNumber,
-      role: 'patient'
+      name: cleanName,
+      email: cleanEmail,
+      mobile: cleanMobile,
+      password: cleanPassword,
+      role: 'patient',
+      status: 'active',
+      createdAt: new Date().toISOString()
     };
 
     const users = getRegisteredUsers();
-    users.push(newPatientUser);
-    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+
+    // Prevent duplicate entries by checking existing email or mobile
+    const existingIndex = users.findIndex((u) => {
+      if (!u) return false;
+      const uEmail = u.email ? String(u.email).trim().toLowerCase() : '';
+      const uMobile = u.mobile ? String(u.mobile).trim() : '';
+      return (cleanEmail && uEmail === cleanEmail) || (cleanMobile && uMobile === cleanMobile);
+    });
+
+    if (existingIndex >= 0) {
+      users[existingIndex] = newPatientUser;
+    } else {
+      users.push(newPatientUser);
+    }
+
+    try {
+      localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
+    } catch (err) {
+      console.error('Failed to save registered user to localStorage', err);
+    }
 
     return {
       success: true,
       data: newPatientUser
-    };
-  };
-
-  const registerStaff = (staffData) => {
-    const newStaffUser = {
-      id: staffData.staffId || `REC-${Math.floor(100 + Math.random() * 900)}`,
-      name: staffData.fullName,
-      email: staffData.officialEmail,
-      mobile: staffData.mobileNumber,
-      department: staffData.department || 'OPD Front Desk',
-      role: 'receptionist'
-    };
-
-    const users = getRegisteredUsers();
-    users.push(newStaffUser);
-    localStorage.setItem(REGISTERED_USERS_KEY, JSON.stringify(users));
-
-    return {
-      success: true,
-      data: newStaffUser
     };
   };
 
@@ -282,11 +288,12 @@ export function AuthProvider({ children }) {
     isAuthenticated: !!user,
     pendingStaffMfa,
     login,
+    loginStaff,
+    loginAdmin,
     initiateStaffLogin,
     verifyStaffOtp,
     logout,
-    registerPatient,
-    registerStaff
+    registerPatient
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

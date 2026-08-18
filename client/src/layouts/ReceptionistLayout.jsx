@@ -35,8 +35,7 @@ export default function ReceptionistLayout() {
   const navItems = [
     { label: 'Dashboard', path: '/reception/dashboard', icon: LayoutDashboard },
     { label: 'Appointments', path: '/reception/appointments', icon: Calendar },
-    { label: 'Patient Queue', path: '/reception/queue', icon: Users },
-    { label: 'Token Management', path: '/reception/tokens', icon: Ticket },
+    { label: 'OPD Queue', path: '/reception/queue', icon: Users },
     { label: 'Patient Search', path: '/reception/patients', icon: Search },
     { label: 'Patient Registration', path: '/reception/register-patient', icon: UserPlus },
     { label: "Today's Visits", path: '/reception/visits', icon: ClipboardList },
