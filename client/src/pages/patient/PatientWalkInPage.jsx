@@ -10,9 +10,10 @@ import {
   Users,
   Activity
 } from 'lucide-react';
-import { doctorsMockData } from '../../data/doctorsMockData';
+import { doctorService } from '../../services/doctorService';
 import { appointmentService } from '../../services/appointmentService';
 import { useAuth } from '../../context/AuthContext';
+import { useEffect } from 'react';
 
 export default function PatientWalkInPage() {
   const navigate = useNavigate();
@@ -21,8 +22,25 @@ export default function PatientWalkInPage() {
 
   const [step, setStep] = useState(1); // 1: Select | 2: Confirm | 3: Success
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
   const [error, setError] = useState('');
   const [confirmedWalkIn, setConfirmedWalkIn] = useState(null);
+
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const data = await doctorService.getAll();
+        // Only list active/available doctors for walk-ins
+        setDoctors(data.filter(d => d.isAvailableToday));
+      } catch (err) {
+        setError(err.message || 'Failed to load available doctors.');
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+    loadDoctors();
+  }, []);
 
   const handleStep1Submit = (e) => {
     e.preventDefault();
@@ -34,14 +52,29 @@ export default function PatientWalkInPage() {
     setStep(2);
   };
 
-  const handleConfirmWalkIn = () => {
-    const walkInRecord = appointmentService.createWalkIn({
-      patientName,
-      doctor: selectedDoctor
-    });
+  const handleConfirmWalkIn = async () => {
+    if (!user?.id) {
+      setError('You must be logged in to join the queue.');
+      return;
+    }
+    setError('');
+    try {
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      const timeStr = now.toTimeString().split(' ')[0]; // HH:MM:SS
+      const walkInRecord = await appointmentService.create({
+        patientId: user.id,
+        doctorId: selectedDoctor.id,
+        date: dateStr,
+        time: timeStr,
+        type: 'walk-in'
+      });
 
-    setConfirmedWalkIn(walkInRecord);
-    setStep(3);
+      setConfirmedWalkIn(walkInRecord);
+      setStep(3);
+    } catch (err) {
+      setError(err.message || 'Failed to join walk-in queue.');
+    }
   };
 
   return (
@@ -71,8 +104,17 @@ export default function PatientWalkInPage() {
         <form onSubmit={handleStep1Submit} className="space-y-4">
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Step 1 — Select Doctor</h3>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {doctorsMockData.map((doc) => {
+          {loadingDoctors ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-500 font-semibold">
+              Loading available doctors...
+            </div>
+          ) : doctors.length === 0 ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-500 font-semibold">
+              No doctors are available today for walk-ins.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {doctors.map((doc) => {
               const isSelected = selectedDoctor?.id === doc.id;
               return (
                 <div
@@ -134,7 +176,8 @@ export default function PatientWalkInPage() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
 
           <div className="pt-4 flex justify-end">
             <button

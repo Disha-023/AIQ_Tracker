@@ -1,9 +1,33 @@
-import React from 'react';
-import { BarChart3, TrendingUp, Users, CheckCircle2, XCircle, Clock, Stethoscope, Building2 } from 'lucide-react';
-import { adminMockData } from '../../data/adminMockData';
+import React, { useState } from 'react';
+import { BarChart3, Users, CheckCircle2, XCircle, Clock, Stethoscope, Building2 } from 'lucide-react';
+import { dashboardService } from '../../services/dashboardService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function AdminReportsPage() {
-  const { reports, stats } = adminMockData;
+  const [reports, setReports] = useState({
+    weeklyAppointments: 0,
+    avgWaitTimeTrend: '0 mins average',
+    completionRate: '100%',
+    cancellationRate: '0%',
+    doctorStats: [],
+    departmentStats: []
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchReports = async () => {
+    try {
+      const data = await dashboardService.getReports();
+      setReports(data);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load hospital reports.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(fetchReports, 15000);
 
   return (
     <div className="space-y-6">
@@ -19,6 +43,13 @@ export default function AdminReportsPage() {
           Completion Rate: {reports.completionRate}
         </span>
       </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+          {error}
+        </div>
+      )}
 
       {/* STATISTICAL SUMMARY CARDS GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -76,18 +107,24 @@ export default function AdminReportsPage() {
           </div>
 
           <div className="space-y-3">
-            {reports.doctorStats.map((doc, idx) => (
-              <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                <div>
-                  <span className="font-bold text-slate-900 block">{doc.name}</span>
-                  <span className="text-[11px] text-slate-500">Avg Consultation Time: {doc.avgDuration}</span>
+            {loading && reports.doctorStats.length === 0 ? (
+              <div className="text-center py-6 text-slate-500 text-xs">Loading performance data...</div>
+            ) : reports.doctorStats.length === 0 ? (
+              <div className="text-center py-6 text-slate-500 text-xs">No active consultations recorded.</div>
+            ) : (
+              reports.doctorStats.map((doc, idx) => (
+                <div key={idx} className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="font-bold text-slate-900 block">{doc.name}</span>
+                    <span className="text-[11px] text-slate-500">Avg Consultation Time: {doc.avg_duration || '10 mins'}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-extrabold text-purple-700 text-sm">{doc.consultations}</span>
+                    <span className="text-[10px] text-slate-500 block">consultations</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className="font-extrabold text-purple-700 text-sm">{doc.consultations}</span>
-                  <span className="text-[10px] text-slate-500 block">consultations</span>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -101,20 +138,26 @@ export default function AdminReportsPage() {
           </div>
 
           <div className="space-y-4 text-xs">
-            {reports.departmentStats.map((dept, idx) => (
-              <div key={idx} className="space-y-1">
-                <div className="flex justify-between font-semibold">
-                  <span className="text-slate-700">{dept.department}</span>
-                  <span className="text-purple-700 font-bold">{dept.percentage}%</span>
+            {loading && reports.departmentStats.length === 0 ? (
+              <div className="text-center py-6 text-slate-500 text-xs">Loading load distribution...</div>
+            ) : reports.departmentStats.length === 0 ? (
+              <div className="text-center py-6 text-slate-500 text-xs">No active department loads today.</div>
+            ) : (
+              reports.departmentStats.map((dept, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between font-semibold">
+                    <span className="text-slate-700">{dept.department}</span>
+                    <span className="text-purple-700 font-bold">{dept.percentage}%</span>
+                  </div>
+                  <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      className="h-full bg-purple-600 rounded-full"
+                      style={{ width: `${dept.percentage}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
-                  <div
-                    className="h-full bg-purple-600 rounded-full"
-                    style={{ width: `${dept.percentage}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 

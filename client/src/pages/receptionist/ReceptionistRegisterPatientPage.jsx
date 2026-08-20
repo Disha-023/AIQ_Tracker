@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UserPlus, CheckCircle2 } from 'lucide-react';
+import { patientService } from '../../services/patientService';
 
 export default function ReceptionistRegisterPatientPage() {
   const [formData, setFormData] = useState({
@@ -13,10 +14,32 @@ export default function ReceptionistRegisterPatientPage() {
   });
 
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [assignedId, setAssignedId] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError('');
+    try {
+      const payload = {
+        name: formData.fullName,
+        dob: formData.dob || null,
+        gender: formData.gender,
+        mobile: formData.mobile,
+        address: formData.address || null,
+        email: formData.email || null,
+        emergency_contact: formData.emergencyContact || null
+      };
+      const newPatient = await patientService.create(payload);
+      setAssignedId(newPatient.patient_id);
+      setSubmitted(true);
+    } catch (err) {
+      setError(err.message || 'Failed to register patient record.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -32,6 +55,12 @@ export default function ReceptionistRegisterPatientPage() {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-4 p-3.5 bg-red-50 text-red-700 text-xs rounded-xl font-bold border border-red-200">
+            {error}
+          </div>
+        )}
+
         {submitted ? (
           <div className="py-8 text-center space-y-4">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
@@ -39,7 +68,7 @@ export default function ReceptionistRegisterPatientPage() {
             </div>
             <h2 className="text-2xl font-bold text-slate-900">Patient Registered Successfully</h2>
             <p className="text-xs text-slate-600">
-              Assigned Patient ID: <strong className="text-blue-700">AIQ-P{Math.floor(100 + Math.random() * 900)}</strong> for <strong>{formData.fullName}</strong>
+              Assigned Patient ID: <strong className="text-blue-700">{assignedId}</strong> for <strong>{formData.fullName}</strong>
             </p>
             <button
               onClick={() => { setSubmitted(false); setFormData({ fullName: '', mobile: '', email: '', dob: '', gender: 'Male', address: '', emergencyContact: '' }); }}
@@ -151,9 +180,10 @@ export default function ReceptionistRegisterPatientPage() {
             <div className="pt-4 border-t border-slate-200 text-right">
               <button
                 type="submit"
-                className="py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer"
+                disabled={loading}
+                className="py-3 px-6 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
               >
-                Register Patient Master Record
+                {loading ? 'Registering...' : 'Register Patient Master Record'}
               </button>
             </div>
           </form>

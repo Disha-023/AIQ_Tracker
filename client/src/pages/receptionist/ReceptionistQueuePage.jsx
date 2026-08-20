@@ -1,81 +1,158 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Users, Play, SkipForward, CheckCircle2, Pause, Volume2, Plus, Ticket, Clock, AlertCircle } from 'lucide-react';
-import { receptionistMockData } from '../../data/receptionistMockData';
+import { queueService } from '../../services/queueService';
+import { doctorService } from '../../services/doctorService';
+import { patientService } from '../../services/patientService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function ReceptionistQueuePage() {
-  const [tokens, setTokens] = useState(receptionistMockData.tokens);
-  const [currentTokenNum, setCurrentTokenNum] = useState(24);
-  const [waitingCount, setWaitingCount] = useState(18);
-  const [isPaused, setIsPaused] = useState(false);
+  const [tokens, setTokens] = useState([]);
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
   const [callMessage, setCallMessage] = useState('');
+  const [isPaused, setIsPaused] = useState(false);
   
   // Issue Token State
   const [newPatient, setNewPatient] = useState('');
-  const [newDoctor, setNewDoctor] = useState('Dr. Rahul Mehta');
+  const [newDoctorId, setNewDoctorId] = useState('');
 
-  const handleCallNext = () => {
-    const nextNum = currentTokenNum + 1;
-    const currentTokenStr = `#${currentTokenNum}`;
-    const nextTokenStr = `#${nextNum}`;
-
-    // Update tokens status
-    setTokens(prevTokens =>
-      prevTokens.map(t => {
-        if (t.token === currentTokenStr) return { ...t, status: 'Completed', waitTime: 'Consultation Done' };
-        if (t.token === nextTokenStr) return { ...t, status: 'Serving', waitTime: 'Currently In Consultation' };
-        return t;
-      })
-    );
-
-    setCurrentTokenNum(nextNum);
-    setWaitingCount(prev => Math.max(0, prev - 1));
-    setCallMessage(`Calling Token ${nextTokenStr} to OPD Room 202`);
+  const fetchQueueData = async () => {
+    try {
+      const qData = await queueService.getAll();
+      setTokens(qData);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load queue entries.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSkipToken = () => {
-    const nextNum = currentTokenNum + 1;
-    const currentTokenStr = `#${currentTokenNum}`;
-    const nextTokenStr = `#${nextNum}`;
-
-    setTokens(prevTokens =>
-      prevTokens.map(t => {
-        if (t.token === currentTokenStr) return { ...t, status: 'Skipped', waitTime: 'Skipped' };
-        if (t.token === nextTokenStr) return { ...t, status: 'Serving', waitTime: 'Currently In Consultation' };
-        return t;
-      })
-    );
-
-    setCurrentTokenNum(nextNum);
-    setCallMessage(`Skipped Token ${currentTokenStr}. Calling Token ${nextTokenStr}`);
+  const loadDoctors = async () => {
+    try {
+      const dData = await doctorService.getAll();
+      const activeDocs = dData.filter(d => d.isAvailableToday);
+      setDoctors(activeDocs);
+      if (activeDocs.length > 0 && !newDoctorId) {
+        setNewDoctorId(activeDocs[0].id);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  const handleMarkCompleted = () => {
-    const currentTokenStr = `#${currentTokenNum}`;
-    setTokens(prevTokens =>
-      prevTokens.map(t =>
-        t.token === currentTokenStr ? { ...t, status: 'Completed', waitTime: 'Consultation Done' } : t
-      )
-    );
-    setCallMessage(`Token ${currentTokenStr} consultation marked Completed`);
+  useEffect(() => {
+    loadDoctors();
+  }, []);
+
+  useAutoRefresh(fetchQueueData, 8000);
+
+  // Derived values
+  const servingToken = tokens.find(t => t.status === 'SERVING');
+  const currentTokenStr = servingToken ? servingToken.token : '#0';
+  const waitingCount = tokens.filter(t => t.status === 'WAITING').length;
+  const currentTokenNum = servingToken && servingToken.token_number ? Number(servingToken.token_number) : 0;
+
+  const handleCallNext = async () => {
+    setError('');
+    const serving = tokens.find(t => t.status === 'SERVING');
+    const nextWaiting = tokens.find(t => t.status === 'WAITING');
+
+    try {
+      if (serving) {
+        // Complete current serving patient
+        await queueService.update(serving.id, { status: 'COMPLETED' });
+      }
+
+      if (nextWaiting) {
+        // Call next waiting patient
+        await queueService.update(nextWaiting.id, { status: 'SERVING' });
+        setCallMessage(`Calling Token ${nextWaiting.token} to ${nextWaiting.doctorName}'s OPD room`);
+      } else {
+        setCallMessage('No patients waiting in queue.');
+      }
+      fetchQueueData();
+    } catch (err) {
+      setError(err.message || 'Failed to transition queue status.');
+    }
   };
 
-  const handleGenerateToken = (e) => {
+  const handleSkipToken = async () => {
+    setError('');
+    const serving = tokens.find(t => t.status === 'SERVING');
+    const nextWaiting = tokens.find(t => t.status === 'WAITING');
+
+    try {
+      if (serving) {
+        // Cancel/Skip current serving patient
+        await queueService.update(serving.id, { status: 'CANCELLED' });
+      }
+
+      if (nextWaiting) {
+        // Call next waiting patient
+        await queueService.update(nextWaiting.id, { status: 'SERVING' });
+        setCallMessage(`Skipped current token. Calling Token ${nextWaiting.token}`);
+      } else {
+        setCallMessage('Skipped current token. No more patients waiting.');
+      }
+      fetchQueueData();
+    } catch (err) {
+      setError(err.message || 'Failed to skip token.');
+    }
+  };
+
+  const handleMarkCompleted = async () => {
+    setError('');
+    const serving = tokens.find(t => t.status === 'SERVING');
+    if (!serving) {
+      setError('No patient is currently in consultation.');
+      return;
+    }
+    try {
+      await queueService.update(serving.id, { status: 'COMPLETED' });
+      setActionMessage(`Token ${serving.token} consultation marked Completed.`);
+      setTimeout(() => setActionMessage(''), 3000);
+      fetchQueueData();
+    } catch (err) {
+      setError(err.message || 'Failed to complete consultation.');
+    }
+  };
+
+  const handleGenerateToken = async (e) => {
     e.preventDefault();
-    if (!newPatient.trim()) return;
+    if (!newPatient.trim() || !newDoctorId) return;
 
-    const nextTokenId = `#${27 + tokens.length - 5}`;
-    const newTokenObj = {
-      token: nextTokenId,
-      patient: newPatient.trim(),
-      doctor: newDoctor,
-      status: 'Waiting',
-      waitTime: '15 min'
-    };
+    setError('');
+    setActionMessage('');
+    try {
+      // Find matching patient by ID, mobile, or name
+      const patientSearch = await patientService.getAll();
+      const match = patientSearch.find(
+        p => p.id.toLowerCase() === newPatient.trim().toLowerCase() ||
+             p.mobile === newPatient.trim() ||
+             p.name.toLowerCase() === newPatient.trim().toLowerCase()
+      );
 
-    setTokens([...tokens, newTokenObj]);
-    setWaitingCount(prev => prev + 1);
-    setNewPatient('');
-    setCallMessage(`Walk-in Token ${nextTokenId} generated for ${newPatient.trim()}`);
+      if (!match) {
+        setError(`Patient '${newPatient}' not found in registry. Register them first.`);
+        return;
+      }
+
+      const freshEntry = await queueService.join({
+        patientId: match.id,
+        doctorId: newDoctorId,
+        type: 'walk-in'
+      });
+
+      setNewPatient('');
+      setActionMessage(`Walk-in Token ${freshEntry.token} generated for ${match.name}`);
+      setTimeout(() => setActionMessage(''), 4000);
+      fetchQueueData();
+    } catch (err) {
+      setError(err.message || 'Failed to issue walk-in token.');
+    }
   };
 
   return (
@@ -93,6 +170,22 @@ export default function ReceptionistQueuePage() {
           {isPaused ? 'Queue Paused' : 'Queue Active'}
         </span>
       </div>
+
+      {/* Error / Alert Bar */}
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {/* Action Banner Message */}
+      {actionMessage && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{actionMessage}</span>
+        </div>
+      )}
 
       {/* AUDIO ANNOUNCEMENT BANNER */}
       {callMessage && (
@@ -218,13 +311,13 @@ export default function ReceptionistQueuePage() {
               Assign OPD Doctor
             </label>
             <select
-              value={newDoctor}
-              onChange={(e) => setNewDoctor(e.target.value)}
-              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white"
+              value={newDoctorId}
+              onChange={(e) => setNewDoctorId(e.target.value)}
+              className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white font-bold"
             >
-              <option>Dr. Rahul Mehta</option>
-              <option>Dr. Anjali Sharma</option>
-              <option>Dr. Vikram Shah</option>
+              {doctors.map(doc => (
+                <option key={doc.id} value={doc.id}>{doc.name} ({doc.specialization})</option>
+              ))}
             </select>
           </div>
 
@@ -260,27 +353,41 @@ export default function ReceptionistQueuePage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
-              {tokens.map((t, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-extrabold text-blue-700">{t.token}</td>
-                  <td className="p-4 font-bold text-slate-900">{t.patient}</td>
-                  <td className="p-4 text-slate-700">{t.doctor}</td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      t.status === 'Completed'
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                        : t.status === 'Serving'
-                        ? 'bg-teal-100 text-teal-800 border-teal-200'
-                        : t.status === 'Skipped'
-                        ? 'bg-red-100 text-red-800 border-red-200'
-                        : 'bg-amber-100 text-amber-800 border-amber-200'
-                    }`}>
-                      {t.status}
-                    </span>
+              {loading && tokens.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="p-8 text-center text-slate-500 font-semibold">
+                    Loading OPD queue details...
                   </td>
-                  <td className="p-4 text-slate-600">{t.waitTime}</td>
                 </tr>
-              ))}
+              ) : tokens.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="p-8 text-center text-slate-500 font-semibold">
+                    No active queue entries today.
+                  </td>
+                </tr>
+              ) : (
+                tokens.map((t, idx) => (
+                  <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-extrabold text-blue-700">{t.token}</td>
+                    <td className="p-4 font-bold text-slate-900">{t.patientName || t.patient_name || t.patient || 'N/A'}</td>
+                    <td className="p-4 text-slate-700">{t.doctorName || t.doctor_name || t.doctor || 'N/A'}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        t.status === 'COMPLETED' || t.status === 'Completed'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : t.status === 'SERVING' || t.status === 'Serving'
+                          ? 'bg-teal-100 text-teal-800 border-teal-200'
+                          : t.status === 'CANCELLED' || t.status === 'Skipped' || t.status === 'Cancelled'
+                          ? 'bg-red-100 text-red-800 border-red-200'
+                          : 'bg-amber-100 text-amber-800 border-amber-200'
+                      }`}>
+                        {t.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-slate-600">{t.waitTime || 'N/A'}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -36,7 +36,7 @@ export default function ReceptionistLayout() {
     { label: 'Dashboard', path: '/reception/dashboard', icon: LayoutDashboard },
     { label: 'Appointments', path: '/reception/appointments', icon: Calendar },
     { label: 'OPD Queue', path: '/reception/queue', icon: Users },
-    { label: 'Patient Search', path: '/reception/patients', icon: Search },
+    { label: 'Patients', path: '/reception/patients', icon: Search },
     { label: 'Patient Registration', path: '/reception/register-patient', icon: UserPlus },
     { label: "Today's Visits", path: '/reception/visits', icon: ClipboardList },
     { label: 'Notifications', path: '/reception/notifications', icon: Bell, badge: '3' },

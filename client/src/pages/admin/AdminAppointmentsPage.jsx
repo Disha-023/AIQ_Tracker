@@ -1,17 +1,37 @@
 import React, { useState } from 'react';
 import { Calendar, Search, Filter, Eye, CheckCircle2, Clock, XCircle, AlertCircle } from 'lucide-react';
-import { adminMockData } from '../../data/adminMockData';
+import { appointmentService } from '../../services/appointmentService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function AdminAppointmentsPage() {
-  const [appointments] = useState(adminMockData.appointments);
+  const [appointments, setAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
 
+  const fetchAppointments = async () => {
+    try {
+      const data = await appointmentService.getAll();
+      setAppointments(data);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load appointments list.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(fetchAppointments, 15000);
+
   const filteredAppointments = appointments.filter(apt => {
-    const matchesSearch = apt.patient.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          apt.doctor.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          apt.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'All' || apt.status === statusFilter;
+    const matchesSearch = (apt.patient && apt.patient.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (apt.doctor && apt.doctor.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          (apt.id && apt.id.toLowerCase().includes(searchTerm.toLowerCase()));
+    
+    // Status filter mapping
+    if (statusFilter === 'All') return matchesSearch;
+    const matchesStatus = apt.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -80,31 +100,51 @@ export default function AdminAppointmentsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
-              {filteredAppointments.map((apt) => (
-                <tr key={apt.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-mono font-bold text-purple-700">{apt.id}</td>
-                  <td className="p-4 font-bold text-slate-900">{apt.patient}</td>
-                  <td className="p-4 text-slate-700">{apt.doctor}</td>
-                  <td className="p-4 text-slate-700">{apt.department}</td>
-                  <td className="p-4 text-slate-600">{apt.date}</td>
-                  <td className="p-4 font-semibold text-slate-800">{apt.time}</td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      apt.status === 'Completed'
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                        : apt.status === 'In Progress'
-                        ? 'bg-blue-100 text-blue-800 border-blue-200'
-                        : apt.status === 'Waiting'
-                        ? 'bg-amber-100 text-amber-800 border-amber-200'
-                        : apt.status === 'Cancelled'
-                        ? 'bg-red-100 text-red-800 border-red-200'
-                        : 'bg-slate-100 text-slate-700 border-slate-200'
-                    }`}>
-                      {apt.status}
-                    </span>
+              {loading && appointments.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-slate-500 font-semibold">
+                    Loading appointments list...
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-red-500 font-semibold">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredAppointments.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-slate-500 font-semibold">
+                    No matching appointments found.
+                  </td>
+                </tr>
+              ) : (
+                filteredAppointments.map((apt) => (
+                  <tr key={apt.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-mono font-bold text-purple-700">{apt.id}</td>
+                    <td className="p-4 font-bold text-slate-900">{apt.patient}</td>
+                    <td className="p-4 text-slate-700">{apt.doctor}</td>
+                    <td className="p-4 text-slate-700">{apt.department}</td>
+                    <td className="p-4 text-slate-600">{apt.date}</td>
+                    <td className="p-4 font-semibold text-slate-800">{apt.time}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        apt.status === 'Completed'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : apt.status === 'In Progress'
+                          ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : apt.status === 'Waiting'
+                          ? 'bg-amber-100 text-amber-800 border-amber-200'
+                          : apt.status === 'Cancelled'
+                          ? 'bg-red-100 text-red-800 border-red-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}>
+                        {apt.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

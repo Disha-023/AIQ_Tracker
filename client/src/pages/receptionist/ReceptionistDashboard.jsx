@@ -13,10 +13,86 @@ import {
   Activity,
   Building2
 } from 'lucide-react';
-import { receptionistMockData } from '../../data/receptionistMockData';
+import { dashboardService } from '../../services/dashboardService';
+import { appointmentService } from '../../services/appointmentService';
+import { queueService } from '../../services/queueService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
+import { useState } from 'react';
 
 export default function ReceptionistDashboard() {
-  const { stats, liveQueue, todayAppointments } = receptionistMockData;
+  const [stats, setStats] = useState({
+    todaysAppointments: 0,
+    patientsWaiting: 0,
+    currentlyServingToken: '#0',
+    completedVisits: 0
+  });
+
+  const [liveQueue, setLiveQueue] = useState({
+    currentToken: '#0',
+    nextToken: '#0',
+    patientsWaiting: 0,
+    averageWait: '0 min'
+  });
+
+  const [todayAppointments, setTodayAppointments] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const loadDashboardData = async () => {
+    try {
+      const statsData = await dashboardService.getStats();
+      const appointments = await appointmentService.getAll();
+      const queues = await queueService.getAll();
+
+      // Today's appointments list
+      const todayStr = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+      const todaysApts = appointments.filter(a => a.date === todayStr);
+      setTodayAppointments(todaysApts);
+
+      // Serving token
+      const serving = queues.find(q => q.status === 'SERVING');
+      const nextWaiting = queues.find(q => q.status === 'WAITING');
+
+      setStats({
+        todaysAppointments: todaysApts.length,
+        patientsWaiting: statsData.waitingPatients,
+        currentlyServingToken: serving ? serving.token : '#0',
+        completedVisits: statsData.completedVisits
+      });
+
+      setLiveQueue({
+        currentToken: serving ? serving.token : '#0',
+        nextToken: nextWaiting ? nextWaiting.token : '#0',
+        patientsWaiting: statsData.waitingPatients,
+        averageWait: `${statsData.averageWaitMin} min`
+      });
+
+    } catch (err) {
+      console.error('Failed to load receptionist dashboard metrics:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(loadDashboardData, 8000);
+
+  const handleCheckIn = async (appointmentId) => {
+    try {
+      const apt = todayAppointments.find(a => a.id === appointmentId);
+      if (!apt) return;
+      
+      // Call create queue entry which updates appointment status to Checked-in inside transaction
+      await queueService.join({
+        patientId: apt.patientId,
+        doctorId: apt.doctorId,
+        appointmentId: appointmentId,
+        type: 'appointment'
+      });
+
+      await loadDashboardData();
+    } catch (err) {
+      console.error('Check-in error:', err);
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -207,31 +283,52 @@ export default function ReceptionistDashboard() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
-              {todayAppointments.map((apt) => (
-                <tr key={apt.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 text-slate-900 font-bold">
-                    {apt.patientName}
-                    <span className="block text-[10px] font-normal text-slate-400">{apt.patientId}</span>
-                  </td>
-                  <td className="p-4 text-slate-700">{apt.doctor}</td>
-                  <td className="p-4 text-slate-700">{apt.time}</td>
-                  <td className="p-4 font-bold text-blue-700">{apt.token}</td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      apt.status === 'Waiting'
-                        ? 'bg-amber-100 text-amber-800 border-amber-200'
-                        : 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                    }`}>
-                      {apt.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg border border-blue-200 cursor-pointer">
-                      Check-in
-                    </button>
+              {loading && todayAppointments.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-slate-500 font-semibold">
+                    Loading today's scheduled appointments...
                   </td>
                 </tr>
-              ))}
+              ) : todayAppointments.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-slate-500 font-semibold">
+                    No scheduled appointments today.
+                  </td>
+                </tr>
+              ) : (
+                todayAppointments.map((apt) => (
+                  <tr key={apt.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 text-slate-900 font-bold">
+                      {apt.patientName}
+                      <span className="block text-[10px] font-normal text-slate-400">{apt.patientId}</span>
+                    </td>
+                    <td className="p-4 text-slate-700">{apt.doctor}</td>
+                    <td className="p-4 text-slate-700">{apt.time}</td>
+                    <td className="p-4 font-bold text-blue-700">{apt.token}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        apt.status === 'Waiting'
+                          ? 'bg-amber-100 text-amber-800 border-amber-200'
+                          : apt.status === 'Checked-in'
+                          ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      }`}>
+                        {apt.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right space-x-2">
+                      {apt.status !== 'Checked-in' && apt.status !== 'Completed' && apt.status !== 'Cancelled' && (
+                        <button
+                          onClick={() => handleCheckIn(apt.id)}
+                          className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg border border-blue-200 cursor-pointer text-xs"
+                        >
+                          Check-in
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

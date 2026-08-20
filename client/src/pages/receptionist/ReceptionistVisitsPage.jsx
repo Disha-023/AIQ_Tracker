@@ -1,9 +1,36 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ClipboardList, CheckCircle2, Clock } from 'lucide-react';
-import { receptionistMockData } from '../../data/receptionistMockData';
+import { queueService } from '../../services/queueService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function ReceptionistVisitsPage() {
-  const { visits } = receptionistMockData;
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchVisits = async () => {
+    try {
+      const qEntries = await queueService.getAll();
+      const mappedVisits = qEntries.map(q => ({
+        id: q.queueId,
+        patient: q.patientName,
+        patientId: q.patientId,
+        doctor: q.doctorName,
+        token: q.token,
+        arrivalTime: q.joined_at ? new Date(q.joined_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : 'N/A',
+        consultationStatus: q.status === 'SERVING' ? 'In Consultation' : q.status === 'COMPLETED' ? 'Completed' : 'Waiting',
+        visitStatus: q.status === 'COMPLETED' ? 'Discharged' : 'Active in OPD'
+      }));
+      setVisits(mappedVisits);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load visits log.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(fetchVisits, 15000);
 
   return (
     <div className="space-y-6">
@@ -32,26 +59,46 @@ export default function ReceptionistVisitsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
-              {visits.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-mono font-bold text-blue-700">{v.id}</td>
-                  <td className="p-4 text-slate-900 font-bold">
-                    {v.patient}
-                    <span className="block text-[10px] text-slate-400 font-normal">{v.patientId}</span>
+              {loading && visits.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-slate-500 font-semibold">
+                    Loading today's patient visits...
                   </td>
-                  <td className="p-4 text-slate-700">{v.doctor}</td>
-                  <td className="p-4 font-extrabold text-blue-700">{v.token}</td>
-                  <td className="p-4 text-slate-700">{v.arrivalTime}</td>
-                  <td className="p-4">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                      v.consultationStatus === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
-                    }`}>
-                      {v.consultationStatus}
-                    </span>
-                  </td>
-                  <td className="p-4 font-bold text-slate-800">{v.visitStatus}</td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-red-500 font-semibold">
+                    {error}
+                  </td>
+                </tr>
+              ) : visits.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="p-8 text-center text-slate-500 font-semibold">
+                    No patient visits logged today.
+                  </td>
+                </tr>
+              ) : (
+                visits.map((v) => (
+                  <tr key={v.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-mono font-bold text-blue-700">{v.id}</td>
+                    <td className="p-4 text-slate-900 font-bold">
+                      {v.patient}
+                      <span className="block text-[10px] text-slate-400 font-normal">{v.patientId}</span>
+                    </td>
+                    <td className="p-4 text-slate-700">{v.doctor}</td>
+                    <td className="p-4 font-extrabold text-blue-700">{v.token}</td>
+                    <td className="p-4 text-slate-700">{v.arrivalTime}</td>
+                    <td className="p-4">
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        v.consultationStatus === 'Completed' ? 'bg-emerald-100 text-emerald-800' : 'bg-blue-100 text-blue-800'
+                      }`}>
+                        {v.consultationStatus}
+                      </span>
+                    </td>
+                    <td className="p-4 font-bold text-slate-800">{v.visitStatus}</td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

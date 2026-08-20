@@ -1,48 +1,74 @@
 import React, { useState } from 'react';
 import { Stethoscope, Search, Plus, Eye, Edit, Power, CheckCircle2, AlertCircle, X } from 'lucide-react';
-import { adminMockData } from '../../data/adminMockData';
+import { doctorService } from '../../services/doctorService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function AdminDoctorsPage() {
-  const [doctors, setDoctors] = useState(adminMockData.doctors);
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDept, setFilterDept] = useState('All');
   const [selectedDoctor, setSelectedDoctor] = useState(null);
   const [editDoctor, setEditDoctor] = useState(null);
   const [actionMessage, setActionMessage] = useState('');
 
+  const fetchDoctors = async () => {
+    try {
+      const data = await doctorService.getAll();
+      setDoctors(data);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load doctors list.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(fetchDoctors, 15000);
+
   const filteredDoctors = doctors.filter(doc => {
     const matchesSearch = doc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           doc.specialization.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          doc.room.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDept = filterDept === 'All' || doc.department === filterDept;
+                          (doc.room && doc.room.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesDept = filterDept === 'All' || doc.department_name === filterDept || doc.department === filterDept;
     return matchesSearch && matchesDept;
   });
 
-  const toggleDoctorStatus = (docId) => {
-    setDoctors(prev =>
-      prev.map(d => {
-        if (d.id === docId) {
-          const newStatus = d.status === 'Active' ? 'Inactive' : 'Active';
-          const newAvail = newStatus === 'Inactive' ? 'Unavailable' : 'Available';
-          setActionMessage(`Doctor ${d.name} status updated to ${newStatus}`);
-          setTimeout(() => setActionMessage(''), 3000);
-          return { ...d, status: newStatus, availability: newAvail };
-        }
-        return d;
-      })
-    );
+  const toggleDoctorStatus = async (docId) => {
+    try {
+      const doctor = doctors.find(d => d.id === docId);
+      if (!doctor) return;
+      const newStatus = doctor.status === 'Active' ? 'Inactive' : 'Active';
+      await doctorService.update(docId, { status: newStatus });
+      setActionMessage(`Doctor ${doctor.name} status updated to ${newStatus}`);
+      setTimeout(() => setActionMessage(''), 3000);
+      fetchDoctors();
+    } catch (err) {
+      setActionMessage(`Error: ${err.message}`);
+      setTimeout(() => setActionMessage(''), 3000);
+    }
   };
 
-  const handleSaveEdit = (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
     if (!editDoctor) return;
 
-    setDoctors(prev =>
-      prev.map(d => d.id === editDoctor.id ? editDoctor : d)
-    );
-    setActionMessage(`Doctor ${editDoctor.name} profile updated successfully.`);
-    setTimeout(() => setActionMessage(''), 3000);
-    setEditDoctor(null);
+    try {
+      const mappedStatus = editDoctor.availability === 'Unavailable' ? 'Inactive' : 'Active';
+      await doctorService.update(editDoctor.id, {
+        name: editDoctor.name,
+        specialization: editDoctor.specialization,
+        status: mappedStatus
+      });
+      setActionMessage(`Doctor ${editDoctor.name} profile updated successfully.`);
+      setTimeout(() => setActionMessage(''), 3000);
+      setEditDoctor(null);
+      fetchDoctors();
+    } catch (err) {
+      setActionMessage(`Error: ${err.message}`);
+      setTimeout(() => setActionMessage(''), 3000);
+    }
   };
 
   return (
@@ -118,67 +144,87 @@ export default function AdminDoctorsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
-              {filteredDoctors.map((doc) => (
-                <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-bold text-slate-900 flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center">
-                      {doc.name.charAt(4) || 'D'}
-                    </div>
-                    {doc.name}
-                  </td>
-                  <td className="p-4 text-slate-700">{doc.specialization}</td>
-                  <td className="p-4 text-slate-700">{doc.department}</td>
-                  <td className="p-4 font-semibold text-purple-700">{doc.room}</td>
-                  <td className="p-4 text-slate-600">{doc.experience}</td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      doc.availability === 'Available'
-                        ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                        : doc.availability === 'On Break'
-                        ? 'bg-amber-100 text-amber-800 border-amber-200'
-                        : 'bg-slate-100 text-slate-700 border-slate-200'
-                    }`}>
-                      {doc.availability}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      doc.status === 'Active'
-                        ? 'bg-blue-100 text-blue-800 border-blue-200'
-                        : 'bg-red-100 text-red-800 border-red-200'
-                    }`}>
-                      {doc.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-1.5">
-                    <button
-                      onClick={() => setSelectedDoctor(doc)}
-                      className="p-1.5 text-slate-600 hover:text-purple-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                      title="View Details"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => setEditDoctor(doc)}
-                      className="p-1.5 text-slate-600 hover:text-blue-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                      title="Edit Doctor"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => toggleDoctorStatus(doc.id)}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                        doc.status === 'Active'
-                          ? 'text-red-600 hover:bg-red-50'
-                          : 'text-emerald-600 hover:bg-emerald-50'
-                      }`}
-                      title={doc.status === 'Active' ? 'Deactivate Doctor' : 'Activate Doctor'}
-                    >
-                      <Power className="w-4 h-4" />
-                    </button>
+              {loading && doctors.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="p-8 text-center text-slate-500 font-semibold">
+                    Loading doctors roster...
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan="8" className="p-8 text-center text-red-500 font-semibold">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredDoctors.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="p-8 text-center text-slate-500 font-semibold">
+                    No matching doctors found in roster.
+                  </td>
+                </tr>
+              ) : (
+                filteredDoctors.map((doc) => (
+                  <tr key={doc.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-bold text-slate-900 flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-full bg-purple-100 text-purple-700 font-bold text-xs flex items-center justify-center">
+                        {doc.name.charAt(4) || 'D'}
+                      </div>
+                      {doc.name}
+                    </td>
+                    <td className="p-4 text-slate-700">{doc.specialization}</td>
+                    <td className="p-4 text-slate-700">{doc.department}</td>
+                    <td className="p-4 font-semibold text-purple-700">{doc.room}</td>
+                    <td className="p-4 text-slate-600">{doc.experience}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        doc.availability === 'Available'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                          : doc.availability === 'On Break'
+                          ? 'bg-amber-100 text-amber-800 border-amber-200'
+                          : 'bg-slate-100 text-slate-700 border-slate-200'
+                      }`}>
+                        {doc.availability}
+                      </span>
+                    </td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        doc.status === 'Active'
+                          ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : 'bg-red-100 text-red-800 border-red-200'
+                      }`}>
+                        {doc.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right space-x-1.5">
+                      <button
+                        onClick={() => setSelectedDoctor(doc)}
+                        className="p-1.5 text-slate-600 hover:text-purple-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => setEditDoctor(doc)}
+                        className="p-1.5 text-slate-600 hover:text-blue-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="Edit Doctor"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => toggleDoctorStatus(doc.id)}
+                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                          doc.status === 'Active'
+                            ? 'text-red-600 hover:bg-red-50'
+                            : 'text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        title={doc.status === 'Active' ? 'Deactivate Doctor' : 'Activate Doctor'}
+                      >
+                        <Power className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

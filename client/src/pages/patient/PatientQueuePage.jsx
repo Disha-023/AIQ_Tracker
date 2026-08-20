@@ -16,6 +16,9 @@ import {
 } from 'lucide-react';
 import { appointmentService } from '../../services/appointmentService';
 import { predictionService } from '../../services/predictionService';
+import { useAuth } from '../../context/AuthContext';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
+import { queueService } from '../../services/queueService';
 
 export default function PatientQueuePage() {
   const [activeBooking, setActiveBooking] = useState(null);
@@ -23,21 +26,48 @@ export default function PatientQueuePage() {
   const [simulatedCurrentTokenNum, setSimulatedCurrentTokenNum] = useState(22);
   const [isSimulating, setIsSimulating] = useState(false);
   const [secondsAgo, setSecondsAgo] = useState(0);
+  const [dbPrediction, setDbPrediction] = useState(null);
 
-  useEffect(() => {
-    const booking = appointmentService.getActiveBooking();
-    if (booking && booking.status !== 'Cancelled') {
-      setActiveBooking(booking);
-      
-      // Parse token number if numeric
-      const yourTokenNum = parseInt(booking.token.replace('#', ''), 10) || 28;
-      const currentNum = Math.max(1, yourTokenNum - 5);
-      setSimulatedCurrentTokenNum(currentNum);
-      setSimulatedPatientsAhead(Math.max(0, yourTokenNum - currentNum));
-    } else {
-      setActiveBooking(null);
+  const { user } = useAuth();
+
+  const fetchBooking = async () => {
+    if (!user?.id) return;
+    try {
+      const booking = await appointmentService.getActiveBooking(user.id);
+      if (booking && booking.status !== 'Cancelled') {
+        setActiveBooking(booking);
+        
+        // Find if they have an active queue entry
+        const qEntries = await queueService.getAll();
+        const activeQ = qEntries.find(q => q.patientId === user.id && q.status !== 'COMPLETED' && q.status !== 'CANCELLED');
+        if (activeQ) {
+          try {
+            const pred = await predictionService.fetchPrediction(activeQ.id);
+            setDbPrediction(pred);
+          } catch (e) {
+            console.error('Failed to load wait-time prediction:', e);
+          }
+
+          setSimulatedCurrentTokenNum(parseInt(activeQ.token.replace('#', ''), 10) - activeQ.position);
+          setSimulatedPatientsAhead(activeQ.position);
+        } else {
+          // Parse token number if numeric
+          const yourTokenNum = parseInt(booking.token.replace('#', ''), 10) || 28;
+          if (!isSimulating) {
+            const currentNum = Math.max(1, yourTokenNum - 5);
+            setSimulatedCurrentTokenNum(currentNum);
+            setSimulatedPatientsAhead(Math.max(0, yourTokenNum - currentNum));
+          }
+        }
+      } else {
+        setActiveBooking(null);
+      }
+    } catch (err) {
+      console.error('Failed to load active queue booking:', err);
     }
-  }, []);
+  };
+
+  useAutoRefresh(fetchBooking, 8000, !!user?.id);
 
   // Demo Simulation Timer (updates queue every 25 seconds if simulation is active)
   useEffect(() => {
@@ -63,12 +93,24 @@ export default function PatientQueuePage() {
   const isBookingActive = activeBooking && activeBooking.status !== 'Cancelled';
 
   // Get dynamic AI prediction from predictionService
-  const prediction = predictionService.getWaitingTimePrediction({
+  const basePrediction = predictionService.getWaitingTimePrediction({
     patientsAhead: simulatedPatientsAhead,
     averageConsultationTime: 7,
     doctorStatus: 'Available',
     dayOfWeek: 'Thursday'
   });
+
+  const prediction = dbPrediction ? {
+    ...basePrediction,
+    outputs: {
+      ...basePrediction.outputs,
+      estimatedWaitMin: dbPrediction.estimatedWaitMin,
+      estimatedWaitMax: dbPrediction.estimatedWaitMax,
+      estimatedWaitText: `${dbPrediction.estimatedWaitMin}–${dbPrediction.estimatedWaitMax} min`,
+      confidence: dbPrediction.confidence,
+      lastUpdated: 'Live from Server (V1.0)'
+    }
+  } : basePrediction;
 
   const yourTokenNum = isBookingActive
     ? parseInt(activeBooking.token.replace('#', ''), 10) || 28

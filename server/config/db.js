@@ -1,11 +1,23 @@
 const { Pool } = require('pg');
 const bcrypt = require('bcryptjs');
 
+// Enforce configuration variables and check for placeholders
+if (!process.env.PGPASSWORD) {
+  throw new Error('Database configuration error: PGPASSWORD environment variable is not defined.');
+}
+if (!process.env.PGDATABASE) {
+  throw new Error('Database configuration error: PGDATABASE environment variable is not defined.');
+}
+
+if (process.env.PGPASSWORD === 'your_password' || process.env.PGDATABASE === 'your_database_name') {
+  console.warn('\n⚠️  WARNING: Database credentials in server/.env are still set to default placeholder values ("your_password" / "your_database_name").\nPlease edit server/.env with your actual database name and password.\n');
+}
+
 const pool = new Pool({
   host: process.env.PGHOST || 'localhost',
   user: process.env.PGUSER || 'postgres',
-  password: process.env.PGPASSWORD || 'postgres',
-  database: process.env.PGDATABASE || 'aiq_tracker',
+  password: process.env.PGPASSWORD,
+  database: process.env.PGDATABASE,
   port: parseInt(process.env.PGPORT || '5432', 10),
   max: 10,
   idleTimeoutMillis: 30000

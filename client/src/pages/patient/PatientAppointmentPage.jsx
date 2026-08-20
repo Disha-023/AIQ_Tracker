@@ -12,7 +12,7 @@ import {
   Sparkles,
   XCircle
 } from 'lucide-react';
-import { doctorsMockData } from '../../data/doctorsMockData';
+import { doctorService } from '../../services/doctorService';
 import { appointmentService } from '../../services/appointmentService';
 import { useAuth } from '../../context/AuthContext';
 
@@ -22,6 +22,8 @@ export default function PatientAppointmentPage() {
   const patientName = user?.name || 'Nisha Sharma';
 
   const [activeBooking, setActiveBooking] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [loadingDoctors, setLoadingDoctors] = useState(true);
 
   // Form State
   const [step, setStep] = useState(1); // 1: Doctor | 2: Date | 3: Time | 4: Review | 5: Confirmation
@@ -32,11 +34,33 @@ export default function PatientAppointmentPage() {
   const [confirmedBooking, setConfirmedBooking] = useState(null);
 
   useEffect(() => {
-    const booking = appointmentService.getActiveBooking();
-    if (booking && booking.status !== 'Cancelled') {
-      setActiveBooking(booking);
-    }
-  }, []);
+    const fetchActive = async () => {
+      if (!user?.id) return;
+      try {
+        const booking = await appointmentService.getActiveBooking(user.id);
+        if (booking && booking.status !== 'Cancelled') {
+          setActiveBooking(booking);
+        }
+      } catch (err) {
+        console.error('Failed to load active booking:', err);
+      }
+    };
+
+    const loadDoctors = async () => {
+      try {
+        const data = await doctorService.getAll();
+        // Only list active doctors for appointments
+        setDoctors(data.filter(d => d.status === 'Active'));
+      } catch (err) {
+        setError(err.message || 'Failed to load doctors.');
+      } finally {
+        setLoadingDoctors(false);
+      }
+    };
+
+    fetchActive();
+    loadDoctors();
+  }, [user]);
 
   const handleSelectDoctor = (doc) => {
     setSelectedDoctor(doc);
@@ -70,22 +94,37 @@ export default function PatientAppointmentPage() {
     setStep(4);
   };
 
-  const handleConfirmAppointment = () => {
-    const newBooking = appointmentService.createAppointment({
-      patientName,
-      doctor: selectedDoctor,
-      date: selectedDate,
-      time: selectedTime
-    });
+  const handleConfirmAppointment = async () => {
+    if (!user?.id) {
+      setError('You must be logged in to book an appointment.');
+      return;
+    }
+    setError('');
+    try {
+      const newBooking = await appointmentService.create({
+        patientId: user.id,
+        doctorId: selectedDoctor.id,
+        date: selectedDate,
+        time: selectedTime,
+        type: 'appointment'
+      });
 
-    setConfirmedBooking(newBooking);
-    setActiveBooking(newBooking);
-    setStep(5);
+      setConfirmedBooking(newBooking);
+      setActiveBooking(newBooking);
+      setStep(5);
+    } catch (err) {
+      setError(err.message || 'Failed to book appointment.');
+    }
   };
 
-  const handleCancelActiveBooking = () => {
-    appointmentService.cancelBooking();
-    setActiveBooking(null);
+  const handleCancelActiveBooking = async () => {
+    if (!activeBooking) return;
+    try {
+      await appointmentService.update(activeBooking.id, { status: 'Cancelled' });
+      setActiveBooking(null);
+    } catch (err) {
+      console.error('Failed to cancel active booking:', err);
+    }
   };
 
   return (
@@ -180,9 +219,18 @@ export default function PatientAppointmentPage() {
       {step === 1 && (
         <div className="space-y-4">
           <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Step 1 — Select Doctor</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {doctorsMockData.map((doc) => {
-              const isSelected = selectedDoctor?.id === doc.id;
+          {loadingDoctors ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-500 font-semibold">
+              Loading available doctors...
+            </div>
+          ) : doctors.length === 0 ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-500 font-semibold">
+              No doctors are currently active.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {doctors.map((doc) => {
+                const isSelected = selectedDoctor?.id === doc.id;
               return (
                 <div
                   key={doc.id}
@@ -228,7 +276,8 @@ export default function PatientAppointmentPage() {
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
 
           <div className="pt-4 flex justify-end">
             <button

@@ -12,7 +12,10 @@ import {
   LogOut,
   Menu,
   X,
-  Building2
+  Building2,
+  Calendar,
+  Clock,
+  UserCheck
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { adminMockData } from '../data/adminMockData';
@@ -32,6 +35,9 @@ export default function AdminLayout() {
 
   const navItems = [
     { label: 'Dashboard', path: '/admin/dashboard', icon: LayoutDashboard },
+    { label: 'Queue', path: '/admin/queue', icon: Clock },
+    { label: 'Appointments', path: '/admin/appointments', icon: Calendar },
+    { label: 'Patients', path: '/admin/patients', icon: UserCheck },
     { label: 'Doctors', path: '/admin/doctors', icon: Stethoscope },
     { label: 'Receptionists / Staff', path: '/admin/staff', icon: Users },
     { label: 'Departments / OPD', path: '/admin/departments', icon: Building2 },

@@ -1,15 +1,32 @@
 import React, { useState } from 'react';
 import { Search, UserCheck, Phone, Mail, Calendar } from 'lucide-react';
-import { receptionistMockData } from '../../data/receptionistMockData';
+import { patientService } from '../../services/patientService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function ReceptionistPatientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const { patients } = receptionistMockData;
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchPatients = async () => {
+    try {
+      const data = await patientService.getAll();
+      setPatients(data);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load patients directory.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(fetchPatients, 15000);
 
   const filteredPatients = patients.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.mobile.includes(searchTerm) ||
+      (p.mobile && p.mobile.includes(searchTerm)) ||
       p.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -52,27 +69,47 @@ export default function ReceptionistPatientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
-              {filteredPatients.map((p) => (
-                <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-mono text-blue-700 font-bold">{p.id}</td>
-                  <td className="p-4 text-slate-900 font-bold">{p.name}</td>
-                  <td className="p-4 text-slate-600">
-                    <div className="flex items-center gap-1"><Phone className="w-3 h-3 text-slate-400" /> {p.mobile}</div>
-                    <div className="flex items-center gap-1 text-[11px] text-slate-400"><Mail className="w-3 h-3 text-slate-400" /> {p.email}</div>
-                  </td>
-                  <td className="p-4 text-slate-700">{p.lastVisit}</td>
-                  <td className="p-4">
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
-                      {p.upcomingAppointment}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button className="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold rounded-lg cursor-pointer">
-                      View Profile
-                    </button>
+              {loading && patients.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-slate-500 font-semibold">
+                    Loading patient directory records...
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-red-500 font-semibold">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredPatients.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="p-8 text-center text-slate-500 font-semibold">
+                    No registered patients found.
+                  </td>
+                </tr>
+              ) : (
+                filteredPatients.map((p) => (
+                  <tr key={p.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-mono text-blue-700 font-bold">{p.id}</td>
+                    <td className="p-4 text-slate-900 font-bold">{p.name}</td>
+                    <td className="p-4 text-slate-600">
+                      <div className="flex items-center gap-1"><Phone className="w-3 h-3 text-slate-400" /> {p.mobile}</div>
+                      <div className="flex items-center gap-1 text-[11px] text-slate-400"><Mail className="w-3 h-3 text-slate-400" /> {p.email}</div>
+                    </td>
+                    <td className="p-4 text-slate-700">{p.lastVisit}</td>
+                    <td className="p-4">
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-blue-800 border border-blue-200">
+                        {p.upcomingAppointment}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right space-x-2">
+                      <button className="px-3 py-1 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold rounded-lg cursor-pointer">
+                        View Profile
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

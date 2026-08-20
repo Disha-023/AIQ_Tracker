@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { History, Sparkles } from 'lucide-react';
-import { patientMockData } from '../../data/patientMockData';
+import { consultationService } from '../../services/consultationService';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PatientHistoryPage() {
-  const { visits } = patientMockData;
+  const { user } = useAuth();
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await consultationService.getAll({ patientId: user.id });
+        setVisits(data);
+      } catch (err) {
+        setError(err.message || 'Failed to load consultation history.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchHistory();
+  }, [user]);
 
   return (
     <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs max-w-4xl mx-auto space-y-6">
@@ -18,7 +37,20 @@ export default function PatientHistoryPage() {
       </div>
 
       <div className="space-y-3">
-        {visits.map((visit) => (
+        {loading && visits.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl">
+            Loading clinical history...
+          </div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl">
+            {error}
+          </div>
+        ) : visits.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl">
+            No past consultations or visits found.
+          </div>
+        ) : (
+          visits.map((visit) => (
           <div key={visit.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
             <div>
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{visit.date} &bull; {visit.id}</span>
@@ -30,7 +62,8 @@ export default function PatientHistoryPage() {
               {visit.status}
             </span>
           </div>
-        ))}
+        ))
+       )}
       </div>
 
       <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 text-center space-y-3">

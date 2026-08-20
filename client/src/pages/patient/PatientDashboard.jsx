@@ -13,28 +13,64 @@ import {
   ChevronRight,
   AlertCircle
 } from 'lucide-react';
+import { patientService } from '../../services/patientService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 import { patientMockData } from '../../data/patientMockData';
 import { appointmentService } from '../../services/appointmentService';
 import { predictionService } from '../../services/predictionService';
 import { useAuth } from '../../context/AuthContext';
+import { notificationService } from '../../services/notificationService';
+import { consultationService } from '../../services/consultationService';
 
 export default function PatientDashboard() {
   const { user } = useAuth();
   const [activeBooking, setActiveBooking] = useState(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [loadingBooking, setLoadingBooking] = useState(true);
+  const [notifications, setNotifications] = useState([]);
+  const [visits, setVisits] = useState([]);
 
-  useEffect(() => {
-    const booking = appointmentService.getActiveBooking();
-    setActiveBooking(booking);
-  }, []);
-
-  const patient = {
-    ...patientMockData.patient,
-    name: user?.name || patientMockData.patient.name,
-    email: user?.email || patientMockData.patient.email
+  const fetchActiveBooking = async () => {
+    if (!user?.id) return;
+    try {
+      const booking = await appointmentService.getActiveBooking(user.id);
+      setActiveBooking(booking);
+    } catch (err) {
+      console.error('Failed to load active booking:', err);
+    } finally {
+      setLoadingBooking(false);
+    }
   };
 
-  const { travel, notifications, visits } = patientMockData;
+  const fetchDashboardStatsData = async () => {
+    if (!user?.id) return;
+    try {
+      const notifData = await notificationService.getAll({ patientId: user.id });
+      setNotifications(notifData.slice(0, 3));
+      
+      const visitData = await consultationService.getAll({ patientId: user.id });
+      setVisits(visitData.slice(0, 3));
+    } catch (err) {
+      console.error('Failed to load dashboard data:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchDashboardStatsData();
+  }, [user]);
+
+  useAutoRefresh(fetchActiveBooking, 8000, !!user?.id);
+
+  // Lazy-load name and email from active auth session
+  const patient = {
+    name: user?.name || patientMockData.patient.name,
+    email: user?.email || patientMockData.patient.email,
+    patientId: user?.id || patientMockData.patient.patientId,
+    mobile: user?.mobile || patientMockData.patient.mobile,
+    bloodGroup: user?.bloodGroup || patientMockData.patient.bloodGroup
+  };
+
+  const { travel } = patientMockData;
   const isBookingActive = activeBooking && activeBooking.status !== 'Cancelled';
 
   // Get consistent prediction metrics from predictionService
@@ -46,9 +82,14 @@ export default function PatientDashboard() {
       })
     : null;
 
-  const handleConfirmCancel = () => {
-    const updated = appointmentService.cancelBooking();
-    setActiveBooking(updated);
+  const handleConfirmCancel = async () => {
+    if (!activeBooking) return;
+    try {
+      await appointmentService.update(activeBooking.id, { status: 'Cancelled' });
+      await fetchActiveBooking();
+    } catch (err) {
+      console.error('Failed to cancel appointment:', err);
+    }
     setShowCancelModal(false);
   };
 
@@ -364,20 +405,26 @@ export default function PatientDashboard() {
                 <h3 className="font-bold text-slate-900 text-base">Recent Notifications</h3>
               </div>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200">
-                3 New
+                {notifications.length} Active
               </span>
             </div>
 
             <div className="space-y-3">
-              {notifications.map((notif) => (
-                <div key={notif.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
-                  <div className="flex justify-between items-center mb-1">
-                    <span className="font-bold text-slate-900">{notif.title}</span>
-                    <span className="text-[10px] text-slate-400">{notif.time}</span>
-                  </div>
-                  <p className="text-slate-600 leading-relaxed">{notif.message}</p>
+              {notifications.length === 0 ? (
+                <div className="p-4 text-center text-slate-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                  No recent notifications.
                 </div>
-              ))}
+              ) : (
+                notifications.map((notif) => (
+                  <div key={notif.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-bold text-slate-900">{notif.title}</span>
+                      <span className="text-[10px] text-slate-400">{notif.time}</span>
+                    </div>
+                    <p className="text-slate-600 leading-relaxed">{notif.message}</p>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -403,18 +450,24 @@ export default function PatientDashboard() {
             </div>
 
             <div className="space-y-3">
-              {visits.map((visit) => (
-                <div key={visit.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase block">{visit.date}</span>
-                    <h4 className="font-bold text-slate-900">{visit.doctor}</h4>
-                    <p className="text-[11px] text-slate-500">{visit.specialization}</p>
-                  </div>
-                  <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200">
-                    {visit.status}
-                  </span>
+              {visits.length === 0 ? (
+                <div className="p-4 text-center text-slate-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                  No past consultation logs.
                 </div>
-              ))}
+              ) : (
+                visits.map((visit) => (
+                  <div key={visit.id} className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                    <div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase block">{visit.date}</span>
+                      <h4 className="font-bold text-slate-900">{visit.doctor}</h4>
+                      <p className="text-[11px] text-slate-500">{visit.specialization}</p>
+                    </div>
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200">
+                      {visit.status}
+                    </span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 

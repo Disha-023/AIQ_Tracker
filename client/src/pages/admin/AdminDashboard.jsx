@@ -16,9 +16,48 @@ import {
   Settings
 } from 'lucide-react';
 import { adminMockData } from '../../data/adminMockData';
+import { dashboardService } from '../../services/dashboardService';
+import { doctorService } from '../../services/doctorService';
+import { departmentService } from '../../services/departmentService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
+import { useState } from 'react';
 
 export default function AdminDashboard() {
-  const { stats, doctors, staffMembers, departments } = adminMockData;
+  const { staffMembers } = adminMockData;
+  const [doctors, setDoctors] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [stats, setStats] = useState({
+    totalPatients: 0,
+    todaysAppointments: 0,
+    activeDoctors: 0,
+    activeReceptionists: 1,
+    patientsWaiting: 0,
+    completedToday: 0
+  });
+
+  const loadStats = async () => {
+    try {
+      const data = await dashboardService.getStats();
+      setStats({
+        totalPatients: data.totalPatients,
+        todaysAppointments: data.waitingPatients + data.completedVisits,
+        activeDoctors: data.activeDoctors,
+        activeReceptionists: 1,
+        patientsWaiting: data.waitingPatients,
+        completedToday: data.completedVisits
+      });
+
+      const docs = await doctorService.getAll();
+      setDoctors(docs.slice(0, 5));
+
+      const depts = await departmentService.getAll();
+      setDepartments(depts.slice(0, 5));
+    } catch (err) {
+      console.error('Failed to load dashboard metrics:', err);
+    }
+  };
+
+  useAutoRefresh(loadStats, 8000);
 
   return (
     <div className="space-y-8">

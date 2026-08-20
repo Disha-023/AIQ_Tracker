@@ -1,9 +1,26 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, AlertTriangle, Info, ShieldAlert, CheckCircle2 } from 'lucide-react';
-import { adminMockData } from '../../data/adminMockData';
+import { notificationService } from '../../services/notificationService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function AdminNotificationsPage() {
-  const [notifications] = useState(adminMockData.notifications);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await notificationService.getAll();
+      setNotifications(data);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load notifications.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(fetchNotifications, 15000);
 
   return (
     <div className="space-y-6">
@@ -22,7 +39,20 @@ export default function AdminNotificationsPage() {
 
       {/* Notifications List */}
       <div className="space-y-3">
-        {notifications.map((n) => (
+        {loading && notifications.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 font-semibold bg-white border border-slate-200 rounded-2xl shadow-xs">
+            Loading system alerts...
+          </div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500 font-semibold bg-white border border-slate-200 rounded-2xl shadow-xs">
+            {error}
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 font-semibold bg-white border border-slate-200 rounded-2xl shadow-xs">
+            No system notifications logged in database.
+          </div>
+        ) : (
+          notifications.map((n) => (
           <div key={n.id} className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex items-start justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
@@ -47,7 +77,8 @@ export default function AdminNotificationsPage() {
               </div>
             </div>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
     </div>

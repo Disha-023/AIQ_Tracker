@@ -1,18 +1,35 @@
 import React, { useState } from 'react';
 import { UserCheck, Search, Eye, Filter, X } from 'lucide-react';
-import { adminMockData } from '../../data/adminMockData';
+import { patientService } from '../../services/patientService';
+import { useAutoRefresh } from '../../hooks/useAutoRefresh';
 
 export default function AdminPatientsPage() {
-  const [patients] = useState(adminMockData.patients);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [selectedPatient, setSelectedPatient] = useState(null);
 
+  const fetchPatients = async () => {
+    try {
+      const data = await patientService.getAll();
+      setPatients(data);
+      setError('');
+    } catch (err) {
+      setError(err.message || 'Failed to load patients directory.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useAutoRefresh(fetchPatients, 15000);
+
   const filteredPatients = patients.filter(p => {
     const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           p.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.mobile.includes(searchTerm) ||
-                          p.email.toLowerCase().includes(searchTerm.toLowerCase());
+                          (p.mobile && p.mobile.includes(searchTerm)) ||
+                          (p.email && p.email.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -82,37 +99,57 @@ export default function AdminPatientsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 font-medium">
-              {filteredPatients.map((patient) => (
-                <tr key={patient.id} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="p-4 font-mono font-bold text-purple-700">{patient.id}</td>
-                  <td className="p-4 font-bold text-slate-900">{patient.name}</td>
-                  <td className="p-4 text-slate-700">{patient.age} yrs</td>
-                  <td className="p-4 text-slate-700">{patient.gender}</td>
-                  <td className="p-4 text-slate-700">{patient.mobile}</td>
-                  <td className="p-4 text-slate-700">{patient.email}</td>
-                  <td className="p-4 text-slate-600">{patient.lastVisit}</td>
-                  <td className="p-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
-                      patient.status === 'In OPD Queue'
-                        ? 'bg-amber-100 text-amber-800 border-amber-200'
-                        : patient.status === 'Confirmed'
-                        ? 'bg-blue-100 text-blue-800 border-blue-200'
-                        : 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                    }`}>
-                      {patient.status}
-                    </span>
-                  </td>
-                  <td className="p-4 text-right">
-                    <button
-                      onClick={() => setSelectedPatient(patient)}
-                      className="p-1.5 text-slate-600 hover:text-purple-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                      title="View Patient Record"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
+              {loading && patients.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="p-8 text-center text-slate-500 font-semibold">
+                    Loading patient directory records...
                   </td>
                 </tr>
-              ))}
+              ) : error ? (
+                <tr>
+                  <td colSpan="9" className="p-8 text-center text-red-500 font-semibold">
+                    {error}
+                  </td>
+                </tr>
+              ) : filteredPatients.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="p-8 text-center text-slate-500 font-semibold">
+                    No registered patients found.
+                  </td>
+                </tr>
+              ) : (
+                filteredPatients.map((patient) => (
+                  <tr key={patient.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="p-4 font-mono font-bold text-purple-700">{patient.id}</td>
+                    <td className="p-4 font-bold text-slate-900">{patient.name}</td>
+                    <td className="p-4 text-slate-700">{patient.age} yrs</td>
+                    <td className="p-4 text-slate-700">{patient.gender}</td>
+                    <td className="p-4 text-slate-700">{patient.mobile}</td>
+                    <td className="p-4 text-slate-700">{patient.email}</td>
+                    <td className="p-4 text-slate-600">{patient.lastVisit}</td>
+                    <td className="p-4">
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                        patient.status === 'In OPD Queue'
+                          ? 'bg-amber-100 text-amber-800 border-amber-200'
+                          : patient.status === 'Confirmed'
+                          ? 'bg-blue-100 text-blue-800 border-blue-200'
+                          : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                      }`}>
+                        {patient.status}
+                      </span>
+                    </td>
+                    <td className="p-4 text-right">
+                      <button
+                        onClick={() => setSelectedPatient(patient)}
+                        className="p-1.5 text-slate-600 hover:text-purple-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="View Patient Record"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

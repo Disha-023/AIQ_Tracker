@@ -1,9 +1,28 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Sparkles } from 'lucide-react';
-import { patientMockData } from '../../data/patientMockData';
+import { notificationService } from '../../services/notificationService';
+import { useAuth } from '../../context/AuthContext';
 
 export default function PatientNotificationsPage() {
-  const { notifications } = patientMockData;
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await notificationService.getAll({ patientId: user.id });
+        setNotifications(data);
+      } catch (err) {
+        setError(err.message || 'Failed to load notifications.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
+  }, [user]);
 
   return (
     <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs max-w-4xl mx-auto space-y-6">
@@ -18,7 +37,20 @@ export default function PatientNotificationsPage() {
       </div>
 
       <div className="space-y-3">
-        {notifications.map((notif) => (
+        {loading && notifications.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl">
+            Loading notifications...
+          </div>
+        ) : error ? (
+          <div className="text-center py-8 text-red-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl">
+            {error}
+          </div>
+        ) : notifications.length === 0 ? (
+          <div className="text-center py-8 text-slate-500 font-semibold bg-slate-50 border border-slate-200 rounded-xl">
+            No new notifications.
+          </div>
+        ) : (
+          notifications.map((notif) => (
           <div key={notif.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-start justify-between">
             <div>
               <h4 className="font-bold text-slate-900 text-sm">{notif.title}</h4>
@@ -28,7 +60,8 @@ export default function PatientNotificationsPage() {
               {notif.time}
             </span>
           </div>
-        ))}
+          ))
+        )}
       </div>
 
       <div className="bg-slate-50 rounded-xl p-6 border border-slate-200 text-center space-y-3">

@@ -1,16 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { User, Sparkles } from 'lucide-react';
-import { patientMockData } from '../../data/patientMockData';
+import { patientService } from '../../services/patientService';
 import { useAuth } from '../../context/AuthContext';
 
 export default function PatientProfilePage() {
   const { user } = useAuth();
+  const [patient, setPatient] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const patient = {
-    ...patientMockData.patient,
-    name: user?.name || patientMockData.patient.name,
-    email: user?.email || patientMockData.patient.email
-  };
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.id) return;
+      try {
+        const data = await patientService.getById(user.id);
+        setPatient(data);
+      } catch (err) {
+        console.error(err);
+        setError(err.message || 'Failed to load profile.');
+        // Fallback to local auth state
+        setPatient({
+          name: user.name,
+          patientId: user.id,
+          email: user.email,
+          mobile: user.mobile,
+          age: 'N/A',
+          bloodGroup: 'N/A'
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs max-w-4xl mx-auto text-center font-bold text-xs text-slate-500">
+        Loading profile record...
+      </div>
+    );
+  }
+
+  if (!patient) {
+    return (
+      <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs max-w-4xl mx-auto text-center font-bold text-xs text-red-500">
+        {error || 'Patient profile not found.'}
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl p-8 border border-slate-200 shadow-xs max-w-4xl mx-auto space-y-6">
@@ -36,8 +74,8 @@ export default function PatientProfilePage() {
         </div>
 
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-          <span className="text-[10px] font-bold text-slate-400 uppercase">Date of Birth</span>
-          <p className="font-semibold text-slate-800 text-sm">{patient.dob}</p>
+          <span className="text-[10px] font-bold text-slate-400 uppercase">Age</span>
+          <p className="font-semibold text-slate-800 text-sm">{patient.age} years</p>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">

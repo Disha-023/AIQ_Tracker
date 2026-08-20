@@ -111,10 +111,10 @@ export default function AppRoutes() {
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin/doctors" element={<AdminDoctorsPage />} />
               <Route path="/admin/staff" element={<AdminStaffPage />} />
-              <Route path="/admin/patients" element={<Navigate to="/admin/dashboard" replace />} />
-              <Route path="/admin/appointments" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/patients" element={<AdminPatientsPage />} />
+              <Route path="/admin/appointments" element={<AdminAppointmentsPage />} />
               <Route path="/admin/departments" element={<AdminDepartmentsPage />} />
-              <Route path="/admin/queue" element={<Navigate to="/admin/dashboard" replace />} />
+              <Route path="/admin/queue" element={<AdminQueuePage />} />
               <Route path="/admin/reports" element={<AdminReportsPage />} />
               <Route path="/admin/notifications" element={<AdminNotificationsPage />} />
               <Route path="/admin/audit-logs" element={<Navigate to="/admin/dashboard" replace />} />
