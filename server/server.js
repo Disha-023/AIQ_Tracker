@@ -12,6 +12,7 @@ const consultationRoutes = require('./routes/consultationRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const predictionRoutes = require('./routes/predictionRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const directionsRoutes = require('./routes/directionsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -55,6 +56,8 @@ app.use('/api/predictions', predictionRoutes);
 
 // Dashboard Routes
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/directions', directionsRoutes);
+
 
 // Root API Index
 app.get('/api', (req, res) => {
@@ -92,8 +95,8 @@ app.listen(PORT, () => {
       console.log(`Database time: ${res.rows[0].now}`);
     })
     .catch(err => {
-      console.error('FAILURE:');
-      console.error('PostgreSQL connection failed');
-      console.error(err.message);
-    });
+  console.error('FAILURE:');
+  console.error('PostgreSQL connection failed');
+  console.error(err);
+});
 });

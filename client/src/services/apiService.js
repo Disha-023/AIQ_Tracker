@@ -80,7 +80,26 @@ export const apiService = {
     } catch (err) {
       return { success: false, message: 'Unable to connect to backend server' };
     }
+  },
+
+  /**
+   * OpenRouteService GPS Driving Directions
+   * Calls Express GET /api/directions?startLon=...&startLat=...&endLon=...&endLat=...
+   */
+  async getDirections(startLon, startLat, endLon, endLat) {
+    try {
+      const url = `${API_BASE_URL}/directions?startLon=${startLon}&startLat=${startLat}&endLon=${endLon}&endLat=${endLat}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (!res.ok) {
+        return { success: false, error: data.error || 'Failed to fetch directions from server' };
+      }
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: 'Unable to connect to directions server' };
+    }
   }
 };
+
 
 export default apiService;

@@ -21,6 +21,7 @@ import { predictionService } from '../../services/predictionService';
 import { useAuth } from '../../context/AuthContext';
 import { notificationService } from '../../services/notificationService';
 import { consultationService } from '../../services/consultationService';
+import GPSLocationCard from '../../components/patient/GPSLocationCard';
 
 export default function PatientDashboard() {
   const { user } = useAuth();
@@ -302,54 +303,11 @@ export default function PatientDashboard() {
         </div>
       </div>
 
-      {/* 4. TRAVEL TIME CARD & 7. PROFILE SUMMARY GRID */}
+      {/* 4. TRAVEL & GPS DISTANCE CARD & 7. PROFILE SUMMARY GRID */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* TRAVEL TIME CARD (7 cols) */}
-        <div className="lg:col-span-7 bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200 mb-4">
-              <div className="flex items-center gap-2">
-                <Car className="w-5 h-5 text-teal-600" />
-                <h3 className="font-bold text-slate-900 text-base">Plan Your Arrival</h3>
-              </div>
-              <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full border border-emerald-200">
-                {travel.status}
-              </span>
-            </div>
-
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between text-xs py-1">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                  Hospital Location
-                </span>
-                <span className="font-semibold text-slate-900">{travel.hospital} ({travel.distance})</span>
-              </div>
-              <div className="flex items-center justify-between text-xs py-1">
-                <span className="text-slate-500 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" />
-                  Estimated Travel Time
-                </span>
-                <span className="font-semibold text-slate-900">{travel.travelTime}</span>
-              </div>
-              <div className="flex items-center justify-between bg-teal-50 p-3 rounded-xl border border-teal-200 mt-2">
-                <span className="text-xs font-semibold text-teal-900">Recommended Departure:</span>
-                <span className="text-sm font-extrabold text-teal-700">{travel.recommendedDeparture}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-slate-100 text-right">
-            <Link
-              to="/patient/queue"
-              className="inline-flex items-center gap-1 text-xs font-semibold text-teal-700 hover:text-teal-900"
-            >
-              View Travel Details
-              <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
+        {/* GPS LOCATION CARD (7 cols) */}
+        <GPSLocationCard className="lg:col-span-7" />
 
         {/* 7. PATIENT PROFILE SUMMARY (5 cols) */}
         <div className="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between">
