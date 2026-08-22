@@ -262,15 +262,15 @@ export default function PatientWalkInPage() {
           <div className="bg-slate-50 p-5 rounded-xl border border-slate-200 text-left space-y-2.5 text-xs">
             <div className="flex justify-between py-1 border-b border-slate-200">
               <span className="text-slate-500 font-semibold">Doctor:</span>
-              <span className="font-bold text-slate-900">{confirmedWalkIn.doctorName}</span>
+              <span className="font-bold text-slate-900">{confirmedWalkIn.doctorName || selectedDoctor?.name}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-200">
               <span className="text-slate-500 font-semibold">Patients Ahead:</span>
-              <span className="font-bold text-blue-700">{confirmedWalkIn.patientsAhead} Patients</span>
+              <span className="font-bold text-blue-700">{confirmedWalkIn.patientsAhead ?? selectedDoctor?.patientsWaiting} Patients</span>
             </div>
             <div className="flex justify-between py-1 border-b border-slate-200">
               <span className="text-slate-500 font-semibold">Estimated Initial Wait:</span>
-              <span className="font-bold text-slate-900">{confirmedWalkIn.estimatedWait}</span>
+              <span className="font-bold text-slate-900">{confirmedWalkIn.estimatedWait || `${selectedDoctor?.estimatedWaitMinutes} min`}</span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-slate-500 font-semibold">Queue Status:</span>

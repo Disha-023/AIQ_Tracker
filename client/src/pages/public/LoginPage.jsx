@@ -13,7 +13,7 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!identifier.trim()) {
@@ -26,7 +26,7 @@ export default function LoginPage() {
     }
 
     // Account-driven login (Role is determined automatically by the authenticated account)
-    const result = login(identifier, password);
+    const result = await login(identifier, password);
 
     if (!result.success) {
       setError(result.message || 'Invalid email/mobile number or password.');

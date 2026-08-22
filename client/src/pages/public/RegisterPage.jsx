@@ -22,7 +22,7 @@ export default function RegisterPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!formData.fullName.trim()) {
@@ -47,7 +47,7 @@ export default function RegisterPage() {
     }
 
     // Creates ONLY role: "patient" account
-    const result = registerPatient(formData);
+    const result = await registerPatient(formData);
     if (result.success) {
       setError('');
       setSuccess(true);

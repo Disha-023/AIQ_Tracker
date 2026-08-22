@@ -85,7 +85,7 @@ export function AuthProvider({ children }) {
   /**
    * Account-driven Login (Role comes strictly from authenticated record)
    */
-  const login = (identifier = '', password = '') => {
+  const login = async (identifier = '', password = '') => {
     const trimmed = identifier ? String(identifier).trim().toLowerCase() : '';
 
     if (!trimmed || !password) {
@@ -122,11 +122,55 @@ export function AuthProvider({ children }) {
       return { success: false, message: 'Account is inactive. Please contact Hospital Administration.' };
     }
 
+    let patientId = matchedAccount.id;
+    let patientName = matchedAccount.name;
+    let patientMobile = matchedAccount.mobile;
+    let patientEmail = matchedAccount.email;
+
+    if (matchedAccount.role === 'patient') {
+      try {
+        const res = await fetch('http://localhost:5000/api/patients');
+        const json = await res.json();
+        if (res.ok && json.data) {
+          const dbPatients = json.data;
+          const match = dbPatients.find(p => 
+            (p.email && p.email.trim().toLowerCase() === patientEmail.trim().toLowerCase()) ||
+            (p.mobile && p.mobile.trim() === patientMobile.trim())
+          );
+          if (match) {
+            patientId = match.patient_id;
+            patientName = match.name;
+            patientMobile = match.mobile;
+            patientEmail = match.email || patientEmail;
+          } else {
+            // Not found in DB, create it in DB
+            const createRes = await fetch('http://localhost:5000/api/patients', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: patientName,
+                email: patientEmail,
+                mobile: patientMobile,
+                age: 25,
+                gender: 'Male'
+              })
+            });
+            const createJson = await createRes.json();
+            if (createRes.ok && createJson.data) {
+              patientId = createJson.data.patient_id;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to map patient to database:', err);
+      }
+    }
+
     const userData = {
-      id: matchedAccount.id,
-      name: matchedAccount.name,
-      email: matchedAccount.email,
-      mobile: matchedAccount.mobile,
+      id: patientId,
+      name: patientName,
+      email: patientEmail,
+      mobile: patientMobile,
       role: matchedAccount.role || 'patient',
       status: matchedAccount.status || 'active',
       loggedInAt: new Date().toISOString()
@@ -231,9 +275,9 @@ export function AuthProvider({ children }) {
   };
 
   /**
-   * Register Patient (Only creates role = "patient" accounts)
+   * Register Patient (Creates PostgreSQL record and local fallback credentials)
    */
-  const registerPatient = (patientData) => {
+  const registerPatient = async (patientData) => {
     const cleanEmail = patientData.email ? String(patientData.email).trim().toLowerCase() : '';
     const cleanMobile = patientData.mobileNumber ? String(patientData.mobileNumber).trim() : '';
     const cleanName = patientData.fullName ? String(patientData.fullName).trim() : 'Patient User';
@@ -243,8 +287,29 @@ export function AuthProvider({ children }) {
       return { success: false, message: 'An email address or mobile number is required to register.' };
     }
 
+    let dbPatientId = `PAT-${Math.floor(1000 + Math.random() * 9000)}`;
+    try {
+      const res = await fetch('http://localhost:5000/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: cleanName,
+          email: cleanEmail,
+          mobile: cleanMobile,
+          age: patientData.age ? parseInt(patientData.age, 10) : 25,
+          gender: patientData.gender || 'Male'
+        })
+      });
+      const json = await res.json();
+      if (res.ok && json.data) {
+        dbPatientId = json.data.patient_id;
+      }
+    } catch (err) {
+      console.error('Failed to save patient to PostgreSQL:', err);
+    }
+
     const newPatientUser = {
-      id: `PAT-${Math.floor(1000 + Math.random() * 9000)}`,
+      id: dbPatientId,
       name: cleanName,
       email: cleanEmail,
       mobile: cleanMobile,
@@ -282,6 +347,16 @@ export function AuthProvider({ children }) {
     };
   };
 
+  const updateUser = (userData) => {
+    setUser(prev => {
+      if (!prev) return null;
+      return {
+        ...prev,
+        ...userData
+      };
+    });
+  };
+
   const value = {
     user,
     role: user?.role || null,
@@ -293,7 +368,8 @@ export function AuthProvider({ children }) {
     initiateStaffLogin,
     verifyStaffOtp,
     logout,
-    registerPatient
+    registerPatient,
+    updateUser
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

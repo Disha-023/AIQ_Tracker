@@ -16,6 +16,36 @@ import { doctorService } from '../../services/doctorService';
 import { appointmentService } from '../../services/appointmentService';
 import { useAuth } from '../../context/AuthContext';
 
+function generateSlots(availableFrom, availableTo, intervalMinutes = 30) {
+  if (!availableFrom || !availableTo) {
+    // Fallback default slots if doctor hours are not defined
+    return [
+      "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+      "12:00 PM", "12:30 PM", "02:00 PM", "02:30 PM",
+      "03:00 PM", "03:30 PM", "04:00 PM", "04:30 PM"
+    ];
+  }
+  
+  const parseTimeToMinutes = (tStr) => {
+    const parts = tStr.split(':');
+    return parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10);
+  };
+  
+  const startMins = parseTimeToMinutes(availableFrom);
+  const endMins = parseTimeToMinutes(availableTo);
+  
+  const slots = [];
+  for (let m = startMins; m < endMins; m += intervalMinutes) {
+    const hour24 = Math.floor(m / 60);
+    const mins = m % 60;
+    const ampm = hour24 >= 12 ? 'PM' : 'AM';
+    const displayHour = hour24 % 12 === 0 ? 12 : hour24 % 12;
+    const displayMins = String(mins).padStart(2, '0');
+    slots.push(`${String(displayHour).padStart(2, '0')}:${displayMins} ${ampm}`);
+  }
+  return slots;
+}
+
 export default function PatientAppointmentPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -32,6 +62,42 @@ export default function PatientAppointmentPage() {
   const [selectedTime, setSelectedTime] = useState('');
   const [error, setError] = useState('');
   const [confirmedBooking, setConfirmedBooking] = useState(null);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState([]);
+
+  useEffect(() => {
+    if (!selectedDoctor || !selectedDate) {
+      setAvailableSlots([]);
+      return;
+    }
+
+    const fetchAvailability = async () => {
+      setLoadingSlots(true);
+      setError('');
+      try {
+        const data = await appointmentService.getAll({ doctorId: selectedDoctor.id });
+        const generated = generateSlots(selectedDoctor.available_from, selectedDoctor.available_to, selectedDoctor.average_consultation_time || 30);
+        const bookedAppointments = data.filter(apt => apt.date === selectedDate && apt.status !== 'Cancelled');
+        
+        const slotsWithStatus = generated.map(slotTime => {
+          const isBooked = bookedAppointments.some(apt => apt.time.trim() === slotTime.trim());
+          return {
+            time: slotTime,
+            status: isBooked ? 'Unavailable' : 'Available'
+          };
+        });
+        
+        setAvailableSlots(slotsWithStatus);
+      } catch (err) {
+        console.error('Failed to fetch availability:', err);
+        setError('Failed to load available time slots.');
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+
+    fetchAvailability();
+  }, [selectedDoctor, selectedDate]);
 
   useEffect(() => {
     const fetchActive = async () => {
@@ -299,11 +365,27 @@ export default function PatientAppointmentPage() {
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { label: 'Today', date: '13 August 2026', sub: '13 Aug' },
-              { label: 'Tomorrow', date: '14 August 2026', sub: '14 Aug' },
-              { label: 'Saturday', date: '15 August 2026', sub: '15 Aug' }
-            ].map((item) => {
+            {(() => {
+              const todayObj = new Date();
+              const tomorrowObj = new Date();
+              tomorrowObj.setDate(todayObj.getDate() + 1);
+              const nextDayObj = new Date();
+              nextDayObj.setDate(todayObj.getDate() + 2);
+              
+              const formatItem = (d, label) => {
+                const dateStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+                const subStr = d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                return { label, date: dateStr, sub: subStr };
+              };
+              
+              const weekday = nextDayObj.toLocaleDateString('en-US', { weekday: 'long' });
+              
+              return [
+                formatItem(todayObj, 'Today'),
+                formatItem(tomorrowObj, 'Tomorrow'),
+                formatItem(nextDayObj, weekday)
+              ];
+            })().map((item) => {
               const isSelected = selectedDate === item.date;
               return (
                 <div
@@ -350,44 +432,55 @@ export default function PatientAppointmentPage() {
             Step 3 — Select Time Slot for {selectedDate}
           </h3>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {selectedDoctor?.timeSlots.map((slot) => {
-              const isSelected = selectedTime === slot.time;
-              const isUnavailable = slot.status === 'Unavailable';
-              return (
-                <div
-                  key={slot.time}
-                  onClick={() => {
-                    if (isUnavailable) {
-                      setError('Selected slot is unavailable. Please choose another time.');
-                      return;
-                    }
-                    setSelectedTime(slot.time);
-                    setError('');
-                  }}
-                  className={`p-4 rounded-xl border text-center transition-all ${
-                    isUnavailable
-                      ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
-                      : isSelected
-                      ? 'bg-teal-50 border-teal-600 ring-2 ring-teal-500 shadow-xs cursor-pointer'
-                      : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs cursor-pointer'
-                  }`}
-                >
-                  <Clock className={`w-4 h-4 mx-auto mb-1.5 ${isSelected ? 'text-teal-600' : 'text-slate-400'}`} />
-                  <span className="text-base font-bold text-slate-900 block">{slot.time}</span>
-                  <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded ${
-                    slot.status === 'Available'
-                      ? 'bg-emerald-100 text-emerald-800'
-                      : slot.status === 'Few Slots'
-                      ? 'bg-amber-100 text-amber-800'
-                      : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {slot.status}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+          {loadingSlots ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-slate-500 font-semibold">
+              Loading available slots...
+            </div>
+          ) : availableSlots.length === 0 ? (
+            <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl text-red-500 font-semibold flex items-center justify-center gap-2">
+              <AlertCircle className="w-5 h-5 shrink-0" />
+              <span>No available appointment slots for this doctor on the selected date.</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {availableSlots.map((slot) => {
+                const isSelected = selectedTime === slot.time;
+                const isUnavailable = slot.status === 'Unavailable';
+                return (
+                  <div
+                    key={slot.time}
+                    onClick={() => {
+                      if (isUnavailable) {
+                        setError('Selected slot is unavailable. Please choose another time.');
+                        return;
+                      }
+                      setSelectedTime(slot.time);
+                      setError('');
+                    }}
+                    className={`p-4 rounded-xl border text-center transition-all ${
+                      isUnavailable
+                        ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-60'
+                        : isSelected
+                        ? 'bg-teal-50 border-teal-600 ring-2 ring-teal-500 shadow-xs cursor-pointer'
+                        : 'bg-white border-slate-200 hover:border-slate-300 shadow-xs cursor-pointer'
+                    }`}
+                  >
+                    <Clock className={`w-4 h-4 mx-auto mb-1.5 ${isSelected ? 'text-teal-600' : 'text-slate-400'}`} />
+                    <span className="text-base font-bold text-slate-900 block">{slot.time}</span>
+                    <span className={`inline-block mt-1 text-[10px] font-bold px-2 py-0.5 rounded ${
+                      slot.status === 'Available'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : slot.status === 'Few Slots'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-slate-200 text-slate-600'
+                    }`}>
+                      {slot.status}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="pt-4 flex justify-between">
             <button
