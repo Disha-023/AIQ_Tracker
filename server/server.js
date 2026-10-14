@@ -1,7 +1,8 @@
 require('dotenv').config();
+const { pool } = require('./config/db');
 const express = require('express');
 const cors = require('cors');
-const { pool } = require('./config/db');
+
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const doctorRoutes = require('./routes/doctorRoutes');
@@ -95,8 +96,8 @@ app.listen(PORT, () => {
       console.log(`Database time: ${res.rows[0].now}`);
     })
     .catch(err => {
-  console.error('FAILURE:');
-  console.error('PostgreSQL connection failed');
-  console.error(err);
-});
+      console.error('FAILURE:');
+      console.error('PostgreSQL connection failed');
+      console.error(err);
+    });
 });

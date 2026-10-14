@@ -13,15 +13,22 @@ if (process.env.PGPASSWORD === 'your_password' || process.env.PGDATABASE === 'yo
   console.warn('\n⚠️  WARNING: Database credentials in server/.env are still set to default placeholder values ("your_password" / "your_database_name").\nPlease edit server/.env with your actual database name and password.\n');
 }
 
+
+
 const pool = new Pool({
   host: process.env.PGHOST || 'localhost',
   user: process.env.PGUSER || 'postgres',
   password: process.env.PGPASSWORD,
   database: process.env.PGDATABASE,
   port: parseInt(process.env.PGPORT || '5432', 10),
+  ssl: {
+    rejectUnauthorized: true
+  },
   max: 10,
   idleTimeoutMillis: 30000
 });
+
+
 
 // Pre-hashed bcrypt passwords (salt = 10) for development fallback store
 const PATIENT_HASH = bcrypt.hashSync('patient123', 10);
