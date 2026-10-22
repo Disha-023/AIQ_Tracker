@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import {
   DESTINATION,
-  calculateHaversineDistance,
   getPatientLocation
 } from '../../utils/geolocation';
 import { apiService } from '../../services/apiService';
@@ -22,22 +21,31 @@ export default function GPSLocationCard({ className = '' }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [routeData, setRouteData] = useState(null);
+  const [userCoords, setUserCoords] = useState(null);
+  const [accuracyWarning, setAccuracyWarning] = useState(null);
 
   const handleGetLocationAndDirections = async () => {
     setLoading(true);
     setError(null);
+    setAccuracyWarning(null);
 
     try {
-      // 1. Get browser GPS coordinates
+      // 1. Get browser GPS coordinates with high accuracy and 15s timeout
       const position = await getPatientLocation({
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 15000,
         maximumAge: 0
       });
 
-      const { latitude, longitude } = position;
+      const { latitude, longitude, accuracy } = position;
+      setUserCoords({ latitude, longitude });
 
-      // 2. Call backend /api/directions (OpenRouteService via Express)
+      // Check GPS accuracy (warn if inaccuracy exceeds 1000m)
+      if (typeof accuracy === 'number' && accuracy > 1000) {
+        setAccuracyWarning(`Low GPS accuracy (±${Math.round(accuracy)}m). Estimated road distance may vary.`);
+      }
+
+      // 2. Call backend /api/directions (TomTom primary with Geoapify fallback via Express)
       const res = await apiService.getDirections(
         longitude,
         latitude,
@@ -45,47 +53,73 @@ export default function GPSLocationCard({ className = '' }) {
         DESTINATION.latitude
       );
 
-      let drivingDistanceKm = null;
-      let drivingDurationMin = null;
-      let isRouteServiceLive = false;
-
-      if (res.success && res.data && res.data.features && res.data.features.length > 0) {
-        const summary = res.data.features[0].properties.summary;
-        if (summary) {
-          drivingDistanceKm = Math.round((summary.distance / 1000) * 10) / 10;
-          drivingDurationMin = Math.round(summary.duration / 60);
-          isRouteServiceLive = true;
-        }
+      if (!res.success) {
+        // Clear routeData to avoid displaying stale distance or travel time
+        setRouteData(null);
+        setError(res.error || 'Driving route unavailable. Please retry.');
+        return;
       }
 
-      // Fallback to Haversine distance if driving route summary is unavailable
-      const fallbackDistance = calculateHaversineDistance(
-        latitude,
-        longitude,
-        DESTINATION.latitude,
-        DESTINATION.longitude
-      );
+      const features = res.data?.features;
+      if (!Array.isArray(features) || features.length === 0) {
+        setRouteData(null);
+        setError('No drivable road route found to the hospital destination.');
+        return;
+      }
+
+      const properties = features[0]?.properties;
+      const distanceMeters = res.data?.distanceMeters ?? properties?.distance ?? properties?.summary?.distance;
+      const durationSeconds = res.data?.durationSeconds ?? properties?.time ?? properties?.summary?.duration;
+      const provider = res.data?.provider ?? (properties?.provider || 'tomtom');
+      const isTrafficAware = res.data?.isTrafficAware ?? (properties?.isTrafficAware ?? (provider === 'tomtom'));
+
+      if (typeof distanceMeters !== 'number' || typeof durationSeconds !== 'number') {
+        setRouteData(null);
+        setError('Routing service returned incomplete route metrics.');
+        return;
+      }
+
+      // 3. Extract road distance (convert meters to kilometers)
+      const rawDistanceKm = distanceMeters / 1000;
+      if (!Number.isFinite(rawDistanceKm) || rawDistanceKm < 0) {
+        setRouteData(null);
+        setError('Invalid road distance received from routing provider.');
+        return;
+      }
+      const drivingDistanceKm = Math.round(rawDistanceKm * 10) / 10;
+
+      // 4. Extract road duration (convert seconds to minutes)
+      const rawDurationSec = durationSeconds;
+      if (!Number.isFinite(rawDurationSec) || rawDurationSec < 0) {
+        setRouteData(null);
+        setError('Invalid travel duration received from routing provider.');
+        return;
+      }
+      const drivingDurationMin = Math.max(1, Math.round(rawDurationSec / 60));
 
       setRouteData({
         latitude,
         longitude,
-        distanceKm: drivingDistanceKm !== null ? drivingDistanceKm : fallbackDistance,
+        distanceKm: drivingDistanceKm,
         durationMin: drivingDurationMin,
-        isRouteServiceLive,
+        provider,
+        isTrafficAware,
+        accuracy: typeof accuracy === 'number' ? Math.round(accuracy) : null,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     } catch (err) {
       console.error('GPS Directions Error:', err);
-      setError(err.message || 'Unable to retrieve location or directions.');
       setRouteData(null);
+      setError(err.message || 'Unable to retrieve location or directions.');
     } finally {
       setLoading(false);
     }
   };
 
-  const googleMapsDirectionsUrl = routeData
-    ? `https://www.google.com/maps/dir/?api=1&origin=${routeData.latitude},${routeData.longitude}&destination=${DESTINATION.latitude},${DESTINATION.longitude}`
-    : DESTINATION.googleMapsUrl;
+  const activeOrigin = routeData || userCoords;
+  const googleMapsDirectionsUrl = activeOrigin
+    ? `https://www.google.com/maps/dir/?api=1&origin=${activeOrigin.latitude},${activeOrigin.longitude}&destination=${DESTINATION.latitude},${DESTINATION.longitude}&travelmode=driving`
+    : `https://www.google.com/maps/dir/?api=1&destination=${DESTINATION.latitude},${DESTINATION.longitude}&travelmode=driving`;
 
   return (
     <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between ${className}`}>
@@ -125,6 +159,14 @@ export default function GPSLocationCard({ className = '' }) {
             <span>{DESTINATION.latitude}, {DESTINATION.longitude}</span>
           </div>
         </div>
+
+        {/* Accuracy Warning Banner */}
+        {accuracyWarning && !error && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{accuracyWarning}</span>
+          </div>
+        )}
 
         {/* Error State Banner */}
         {error && (
@@ -187,27 +229,42 @@ export default function GPSLocationCard({ className = '' }) {
                   </div>
                 </div>
 
-                <div className="p-3 bg-white rounded-xl border border-teal-200 text-center">
+                <div className="p-3 bg-white rounded-xl border border-teal-200 text-center flex flex-col justify-between">
                   <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center justify-center gap-1">
                     <Clock className="w-3.5 h-3.5 text-teal-600" />
                     Est. Travel Time
                   </span>
                   <div className="text-xl font-extrabold text-teal-700 mt-1">
-                    {routeData.durationMin !== null ? (
-                      <>{routeData.durationMin} <span className="text-xs font-semibold text-teal-900">min</span></>
-                    ) : (
-                      <span className="text-xs font-medium text-slate-500">~{Math.round(routeData.distanceKm * 3)} min</span>
-                    )}
+                    ~{routeData.durationMin} <span className="text-xs font-semibold text-teal-900">min</span>
                   </div>
+                  {routeData.isTrafficAware ? (
+                    <span className="text-[9px] text-emerald-700 font-semibold leading-none">
+                      with live traffic
+                    </span>
+                  ) : (
+                    <span className="text-[9px] text-slate-400 font-medium leading-none">
+                      without live traffic
+                    </span>
+                  )}
                 </div>
               </div>
 
-              {/* Route Engine Badge */}
-              <div className="text-[10px] text-center text-teal-700 font-semibold pt-1">
-                {routeData.isRouteServiceLive ? (
-                  <span>✓ Driving route calculated live via OpenRouteService backend API</span>
+              {/* Route Engine Badge & Traffic Clarification */}
+              <div className="text-[10px] text-center text-teal-700 font-semibold pt-1 space-y-0.5">
+                {routeData.isTrafficAware ? (
+                  <>
+                    <div className="text-emerald-700 font-bold">✓ Live traffic-aware driving route via TomTom</div>
+                    <p className="text-[9.5px] font-normal text-slate-500">
+                      ETA includes real-time congestion and historical traffic patterns.
+                    </p>
+                  </>
                 ) : (
-                  <span>Direct distance calculated via Haversine formula</span>
+                  <>
+                    <div>✓ Estimated driving time (without live traffic) via Geoapify fallback</div>
+                    <p className="text-[9.5px] font-normal text-slate-500">
+                      Actual travel time may be longer due to real-time traffic. Use Open Navigation for live conditions.
+                    </p>
+                  </>
                 )}
               </div>
             </div>
@@ -218,13 +275,26 @@ export default function GPSLocationCard({ className = '' }) {
       {/* Action Buttons */}
       <div className="pt-2 space-y-2">
         {!routeData && !loading && (
-          <button
-            onClick={handleGetLocationAndDirections}
-            className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Locate className="w-4 h-4" />
-            Get My Location & Directions
-          </button>
+          <div className={userCoords ? "grid grid-cols-1 sm:grid-cols-2 gap-2" : ""}>
+            <button
+              onClick={handleGetLocationAndDirections}
+              className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <Locate className="w-4 h-4" />
+              {error ? "Recalculate Directions" : "Get My Location & Directions"}
+            </button>
+            {userCoords && (
+              <a
+                href={googleMapsDirectionsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                Open Navigation
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
         )}
 
         {loading && (

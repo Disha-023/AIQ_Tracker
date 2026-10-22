@@ -65,7 +65,7 @@ export function calculateHaversineDistance(lat1, lon1, lat2, lon2) {
  * @param {Object} [options] - Geolocation API configuration options
  * @returns {Promise<{latitude: number, longitude: number, accuracy: number}>}
  */
-export function getPatientLocation(options = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }) {
+export function getPatientLocation(options = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }) {
   return new Promise((resolve, reject) => {
     if (!navigator || !navigator.geolocation) {
       reject({
@@ -77,10 +77,31 @@ export function getPatientLocation(options = { enableHighAccuracy: true, timeout
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
+        if (!position || !position.coords) {
+          reject({
+            code: 'INVALID_POSITION',
+            message: 'Device provided empty or invalid position data.'
+          });
+          return;
+        }
+
+        const { latitude, longitude, accuracy } = position.coords;
+
+        if (
+          typeof latitude !== 'number' || !Number.isFinite(latitude) || latitude < -90 || latitude > 90 ||
+          typeof longitude !== 'number' || !Number.isFinite(longitude) || longitude < -180 || longitude > 180
+        ) {
+          reject({
+            code: 'INVALID_COORDINATES',
+            message: 'Device reported invalid GPS coordinates out of allowable range.'
+          });
+          return;
+        }
+
         resolve({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy
+          latitude,
+          longitude,
+          accuracy: typeof accuracy === 'number' && Number.isFinite(accuracy) ? accuracy : null
         });
       },
       (error) => {
