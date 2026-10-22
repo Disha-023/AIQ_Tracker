@@ -9,7 +9,11 @@ import {
   CheckCircle2,
   Clock,
   Car,
-  ExternalLink
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  ShieldCheck,
+  Compass
 } from 'lucide-react';
 import {
   DESTINATION,
@@ -23,6 +27,7 @@ export default function GPSLocationCard({ className = '' }) {
   const [routeData, setRouteData] = useState(null);
   const [userCoords, setUserCoords] = useState(null);
   const [accuracyWarning, setAccuracyWarning] = useState(null);
+  const [showGpsDetails, setShowGpsDetails] = useState(false);
 
   const handleGetLocationAndDirections = async () => {
     setLoading(true);
@@ -97,15 +102,19 @@ export default function GPSLocationCard({ className = '' }) {
       }
       const drivingDurationMin = Math.max(1, Math.round(rawDurationSec / 60));
 
+      const now = new Date();
+
       setRouteData({
         latitude,
         longitude,
         distanceKm: drivingDistanceKm,
         durationMin: drivingDurationMin,
+        durationSeconds: rawDurationSec,
+        calculatedAt: now.getTime(),
         provider,
         isTrafficAware,
         accuracy: typeof accuracy === 'number' ? Math.round(accuracy) : null,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        timestamp: now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     } catch (err) {
       console.error('GPS Directions Error:', err);
@@ -121,164 +130,379 @@ export default function GPSLocationCard({ className = '' }) {
     ? `https://www.google.com/maps/dir/?api=1&origin=${activeOrigin.latitude},${activeOrigin.longitude}&destination=${DESTINATION.latitude},${DESTINATION.longitude}&travelmode=driving`
     : `https://www.google.com/maps/dir/?api=1&destination=${DESTINATION.latitude},${DESTINATION.longitude}&travelmode=driving`;
 
+  // Calculated presentation-only estimated arrival time (synchronized with recalculation)
+  const estimatedArrival = (routeData?.calculatedAt && typeof routeData?.durationSeconds === 'number')
+    ? new Date(routeData.calculatedAt + routeData.durationSeconds * 1000).toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      })
+    : null;
+
   return (
-    <div className={`bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col justify-between ${className}`}>
+    <div className={`bg-white rounded-2xl p-6 border border-slate-200/90 shadow-xs hover:shadow-sm transition-shadow flex flex-col justify-between ${className}`}>
       <div>
-        {/* Card Header */}
-        <div className="flex justify-between items-center pb-3 border-b border-slate-200 mb-4">
-          <div className="flex items-center gap-2">
-            <Navigation className="w-5 h-5 text-teal-600" />
-            <h3 className="font-bold text-slate-900 text-base">Plan Your Arrival (GPS Directions)</h3>
+        {/* ==================================================================== */}
+        {/* A. PREMIUM HEADER */}
+        {/* ==================================================================== */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3 mb-5">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-teal-50 border border-teal-100/80 text-teal-600 flex items-center justify-center shrink-0 shadow-2xs">
+              <Navigation className="w-5 h-5 text-teal-600" />
+            </div>
+            <div>
+              <h3 className="font-bold text-slate-900 text-base md:text-lg tracking-tight leading-snug">
+                Plan Your Arrival
+              </h3>
+              <p className="text-xs text-slate-500 font-normal">
+                Smart navigation to your hospital
+              </p>
+            </div>
           </div>
-          <span className="px-2.5 py-1 bg-teal-50 text-teal-800 text-xs font-bold rounded-full border border-teal-200 flex items-center gap-1">
-            <MapPin className="w-3 h-3 text-teal-600" />
-            {DESTINATION.name}
-          </span>
+
+          <div className="flex items-center gap-2 self-start sm:self-center">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-teal-50/90 text-teal-800 text-xs font-semibold rounded-full border border-teal-200/70 shadow-2xs">
+              <MapPin className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+              {DESTINATION.name}
+            </span>
+          </div>
         </div>
 
-        {/* Hospital Fixed Destination Info */}
-        <div className="mb-4 p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 space-y-1">
-          <div className="flex justify-between items-start">
-            <div>
-              <span className="text-[10px] uppercase font-bold text-slate-400 block">Fixed Destination</span>
-              <span className="font-bold text-slate-900 text-sm">{DESTINATION.name}</span>
+        {/* ==================================================================== */}
+        {/* B. VISUAL JOURNEY OVERVIEW (SCHEMATIC) */}
+        {/* ==================================================================== */}
+        <div className="mb-5 p-4 bg-slate-50/80 rounded-2xl border border-slate-200/70">
+          <div className="flex items-center justify-between gap-2">
+            {/* Origin Node */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-2xs border ${
+                routeData
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
+                  : 'bg-white border-slate-200 text-slate-400'
+              }`}>
+                <Locate className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Your Location
+                </span>
+                <span className="text-xs font-bold text-slate-800 truncate block">
+                  {routeData ? 'Current GPS' : (userCoords ? 'Detected' : 'Tap Below')}
+                </span>
+              </div>
             </div>
+
+            {/* Schematic Route Track */}
+            <div className="flex-1 mx-2 sm:mx-4 relative flex items-center">
+              <div className="w-full h-0.5 bg-gradient-to-r from-teal-300 via-teal-400 to-teal-500 rounded-full relative"></div>
+              <div className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 top-1/2">
+                <div className="w-6 h-6 rounded-full bg-white border border-teal-300 text-teal-600 flex items-center justify-center shadow-xs">
+                  <Car className="w-3.5 h-3.5 text-teal-600" />
+                </div>
+              </div>
+            </div>
+
+            {/* Destination Node */}
+            <div className="flex items-center gap-2.5 min-w-0 text-right">
+              <div className="min-w-0">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                  Destination
+                </span>
+                <span className="text-xs font-bold text-slate-800 truncate block">
+                  {DESTINATION.name}
+                </span>
+              </div>
+              <div className="w-8 h-8 rounded-xl bg-teal-600 border border-teal-700 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                <MapPin className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          </div>
+
+          {/* Subtext with address & Google Maps link */}
+          <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex flex-col sm:flex-row sm:items-center justify-between text-[11px] text-slate-500 gap-1.5">
+            <span className="truncate">{DESTINATION.address}</span>
             <a
               href={DESTINATION.googleMapsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[11px] font-semibold text-teal-700 hover:text-teal-900 flex items-center gap-1"
+              className="font-semibold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1 shrink-0 transition-colors"
             >
-              Maps Link
+              Open in Google Maps
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
-          <p className="text-[11px] text-slate-500">{DESTINATION.address}</p>
-          <div className="pt-1 flex items-center justify-between text-[11px] font-mono text-slate-500">
-            <span>Coordinates:</span>
-            <span>{DESTINATION.latitude}, {DESTINATION.longitude}</span>
-          </div>
         </div>
 
-        {/* Accuracy Warning Banner */}
-        {accuracyWarning && !error && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>{accuracyWarning}</span>
+        {/* ==================================================================== */}
+        {/* H. LOADING STATE (SKELETON EXPERIENCE) */}
+        {/* ==================================================================== */}
+        {loading && (
+          <div className="space-y-3.5 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <div className="p-4 bg-slate-50/70 rounded-xl border border-slate-200/70 animate-pulse motion-reduce:animate-none space-y-2.5">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-lg bg-slate-200"></div>
+                  <div className="h-3 w-24 bg-slate-200 rounded"></div>
+                </div>
+                <div className="h-7 w-20 bg-slate-200 rounded"></div>
+              </div>
+              <div className="p-4 bg-teal-50/40 rounded-xl border border-teal-100 animate-pulse motion-reduce:animate-none space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-teal-200"></div>
+                    <div className="h-3 w-28 bg-teal-200 rounded"></div>
+                  </div>
+                </div>
+                <div className="h-7 w-24 bg-teal-200 rounded"></div>
+              </div>
+            </div>
+
+            <div className="p-3.5 bg-teal-50/70 rounded-xl border border-teal-200/60 flex items-center justify-center gap-2.5 text-xs text-teal-800 font-medium">
+              <Loader2 className="w-4 h-4 animate-spin motion-reduce:animate-none text-teal-600" />
+              <span>Calculating your driving route...</span>
+            </div>
           </div>
         )}
 
-        {/* Error State Banner */}
-        {error && (
-          <div className="mb-4 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 space-y-2">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-              <div>
-                <strong className="font-bold block">Location or Directions Error</strong>
-                <span>{error}</span>
+        {/* ==================================================================== */}
+        {/* I. ERROR STATE BANNER */}
+        {/* ==================================================================== */}
+        {error && !loading && (
+          <div className="mb-5 p-4 bg-red-50/80 border border-red-200 rounded-2xl text-xs text-red-800 space-y-3 shadow-2xs">
+            <div className="flex items-start gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-red-100 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
+                <AlertCircle className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <strong className="font-bold text-red-900 block text-xs">
+                  Location or Directions Error
+                </strong>
+                <p className="text-red-700 text-[11.5px] mt-0.5 leading-relaxed">
+                  {error}
+                </p>
               </div>
             </div>
-            <div className="text-right pt-1">
+            <div className="text-right pt-1 border-t border-red-100">
               <button
+                type="button"
                 onClick={handleGetLocationAndDirections}
                 disabled={loading}
-                className="inline-flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-[11px] transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold text-xs transition-colors shadow-2xs cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-red-400 focus:ring-offset-1"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 Retry
               </button>
             </div>
           </div>
         )}
 
-        {/* Successful Directions Output */}
-        {routeData && (
-          <div className="space-y-3 mb-4">
-            <div className="p-4 bg-teal-50/80 rounded-xl border border-teal-200 text-teal-900 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-teal-800 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  Your Current GPS Position
-                </span>
-                <span className="text-[10px] text-teal-600 font-semibold">
-                  Updated at {routeData.timestamp}
-                </span>
-              </div>
+        {/* ACCURACY WARNING BANNER */}
+        {accuracyWarning && !error && !loading && (
+          <div className="mb-4 p-3 bg-amber-50/90 border border-amber-200/80 rounded-xl text-xs text-amber-800 flex items-center gap-2.5 shadow-2xs">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span className="text-[11.5px] leading-tight">{accuracyWarning}</span>
+          </div>
+        )}
 
-              {/* Patient Coordinates Display */}
-              <div className="grid grid-cols-2 gap-2 bg-white/80 p-2.5 rounded-lg border border-teal-100 font-mono text-xs">
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase block font-sans font-bold">Latitude</span>
-                  <span className="font-semibold text-slate-800">{routeData.latitude.toFixed(5)}</span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase block font-sans font-bold">Longitude</span>
-                  <span className="font-semibold text-slate-800">{routeData.longitude.toFixed(5)}</span>
-                </div>
-              </div>
-
-              {/* Driving Metrics Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-white rounded-xl border border-teal-200 text-center">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center justify-center gap-1">
-                    <Car className="w-3.5 h-3.5 text-teal-600" />
+        {/* ==================================================================== */}
+        {/* C. MODERN TRAVEL METRIC CARDS */}
+        {/* ==================================================================== */}
+        {routeData && !loading && (
+          <div className="space-y-3.5 mb-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              {/* Distance Metric Card */}
+              <div className="p-4 bg-white rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between hover:border-slate-300 transition-colors">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-6 h-6 rounded-lg bg-teal-50 text-teal-600 border border-teal-100/70 flex items-center justify-center">
+                      <Car className="w-3.5 h-3.5" />
+                    </span>
                     Driving Distance
                   </span>
-                  <div className="text-xl font-extrabold text-teal-700 mt-1">
-                    {routeData.distanceKm} <span className="text-xs font-semibold text-teal-900">km</span>
-                  </div>
                 </div>
+                <div className="flex items-baseline mt-1">
+                  <span className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
+                    {routeData.distanceKm}
+                  </span>
+                  <span className="text-xs font-bold text-slate-500 ml-1.5 uppercase">
+                    km
+                  </span>
+                </div>
+                <div className="text-[10.5px] text-slate-400 mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                  <span>Fastest road corridor</span>
+                </div>
+              </div>
 
-                <div className="p-3 bg-white rounded-xl border border-teal-200 text-center flex flex-col justify-between">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center justify-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-teal-600" />
+              {/* Travel Time Metric Card (Strong Visual Emphasis) */}
+              <div className="p-4 bg-gradient-to-br from-teal-50/90 via-white to-emerald-50/40 rounded-2xl border-2 border-teal-200/90 shadow-2xs flex flex-col justify-between relative overflow-hidden">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <span className="w-6 h-6 rounded-lg bg-teal-600 text-white flex items-center justify-center shadow-2xs">
+                      <Clock className="w-3.5 h-3.5" />
+                    </span>
                     Est. Travel Time
                   </span>
-                  <div className="text-xl font-extrabold text-teal-700 mt-1">
-                    ~{routeData.durationMin} <span className="text-xs font-semibold text-teal-900">min</span>
-                  </div>
                   {routeData.isTrafficAware ? (
-                    <span className="text-[9px] text-emerald-700 font-semibold leading-none">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200/70">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse motion-reduce:animate-none"></span>
+                      Live
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[9.5px] font-semibold bg-slate-100 text-slate-600 border border-slate-200">
+                      Standard
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-baseline mt-1">
+                  <span className="text-2xl md:text-3xl font-extrabold text-teal-950 tracking-tight">
+                    ~{routeData.durationMin}
+                  </span>
+                  <span className="text-xs font-bold text-teal-800 ml-1.5 uppercase">
+                    min
+                  </span>
+                </div>
+
+                <div className="text-[10.5px] mt-2 pt-2 border-t border-teal-100 flex items-center justify-between">
+                  {routeData.isTrafficAware ? (
+                    <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 inline shrink-0" />
                       with live traffic
                     </span>
                   ) : (
-                    <span className="text-[9px] text-slate-400 font-medium leading-none">
+                    <span className="text-slate-500 font-medium">
                       without live traffic
                     </span>
                   )}
                 </div>
               </div>
+            </div>
 
-              {/* Route Engine Badge & Traffic Clarification */}
-              <div className="text-[10px] text-center text-teal-700 font-semibold pt-1 space-y-0.5">
+            {/* ==================================================================== */}
+            {/* D. ESTIMATED ARRIVAL TIME BANNER */}
+            {/* ==================================================================== */}
+            {estimatedArrival && (
+              <div className="p-3 bg-emerald-50/70 rounded-xl border border-emerald-200/70 flex items-center justify-between text-xs text-emerald-950 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>
+                    Estimated arrival:{' '}
+                    <strong className="font-extrabold text-emerald-900">
+                      {estimatedArrival}
+                    </strong>
+                  </span>
+                </div>
+                <span className="text-[10px] text-emerald-700/80 font-medium hidden sm:inline">
+                  Estimated based on current route
+                </span>
+              </div>
+            )}
+
+            {/* ==================================================================== */}
+            {/* F. ROUTING PROVIDER STATUS */}
+            {/* ==================================================================== */}
+            <div className="p-3 bg-slate-50/80 rounded-xl border border-slate-200/60 text-xs">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                  Routing Engine
+                </span>
                 {routeData.isTrafficAware ? (
-                  <>
-                    <div className="text-emerald-700 font-bold">✓ Live traffic-aware driving route via TomTom</div>
-                    <p className="text-[9.5px] font-normal text-slate-500">
-                      ETA includes real-time congestion and historical traffic patterns.
-                    </p>
-                  </>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-50 text-emerald-800 text-[10.5px] font-bold rounded-md border border-emerald-200/80">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+                    Live traffic-aware route
+                  </span>
                 ) : (
-                  <>
-                    <div>✓ Estimated driving time (without live traffic) via Geoapify fallback</div>
-                    <p className="text-[9.5px] font-normal text-slate-500">
-                      Actual travel time may be longer due to real-time traffic. Use Open Navigation for live conditions.
-                    </p>
-                  </>
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-700 text-[10.5px] font-semibold rounded-md border border-slate-200">
+                    Traffic data unavailable
+                  </span>
                 )}
               </div>
+              <p className="text-[11px] text-slate-500 leading-relaxed">
+                {routeData.isTrafficAware
+                  ? 'ETA includes real-time congestion and historical traffic patterns via TomTom.'
+                  : 'Estimated duration is calculated without live traffic conditions via Geoapify fallback. Actual travel time may vary.'}
+              </p>
+            </div>
+
+            {/* ==================================================================== */}
+            {/* E. COLLAPSIBLE GPS LOCATION DETAILS */}
+            {/* ==================================================================== */}
+            <div className="border border-slate-200/60 rounded-xl overflow-hidden bg-white">
+              <button
+                type="button"
+                onClick={() => setShowGpsDetails(!showGpsDetails)}
+                className="w-full flex items-center justify-between px-3.5 py-2.5 bg-slate-50/60 hover:bg-slate-100/70 transition-colors text-left cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-teal-500"
+                aria-expanded={showGpsDetails}
+              >
+                <div className="flex items-center gap-2">
+                  <Compass className="w-3.5 h-3.5 text-teal-600" />
+                  <span className="text-xs font-semibold text-slate-700">
+                    GPS Location Details
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-slate-400 text-xs">
+                  <span className="text-[10.5px] text-slate-500 hidden sm:inline">
+                    {showGpsDetails ? 'Hide coordinates' : 'View coordinates'}
+                  </span>
+                  {showGpsDetails ? (
+                    <ChevronUp className="w-3.5 h-3.5 text-slate-500" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+                  )}
+                </div>
+              </button>
+
+              {showGpsDetails && (
+                <div className="p-3 bg-slate-50/40 border-t border-slate-100 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2 bg-white rounded-lg border border-slate-200/60">
+                    <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
+                      Latitude
+                    </span>
+                    <span className="font-mono font-semibold text-slate-800 text-[11px]">
+                      {routeData.latitude.toFixed(5)}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg border border-slate-200/60">
+                    <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
+                      Longitude
+                    </span>
+                    <span className="font-mono font-semibold text-slate-800 text-[11px]">
+                      {routeData.longitude.toFixed(5)}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg border border-slate-200/60">
+                    <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
+                      Accuracy
+                    </span>
+                    <span className="font-mono font-semibold text-slate-800 text-[11px]">
+                      {routeData.accuracy ? `±${routeData.accuracy}m` : 'High'}
+                    </span>
+                  </div>
+                  <div className="p-2 bg-white rounded-lg border border-slate-200/60">
+                    <span className="text-[9.5px] uppercase font-bold text-slate-400 block">
+                      Updated At
+                    </span>
+                    <span className="font-mono font-semibold text-slate-800 text-[11px]">
+                      {routeData.timestamp}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="pt-2 space-y-2">
+      {/* ==================================================================== */}
+      {/* G. PREMIUM ACTION BUTTONS */}
+      {/* ==================================================================== */}
+      <div className="pt-2 border-t border-slate-100">
         {!routeData && !loading && (
-          <div className={userCoords ? "grid grid-cols-1 sm:grid-cols-2 gap-2" : ""}>
+          <div className={userCoords ? "grid grid-cols-1 sm:grid-cols-2 gap-2.5" : ""}>
             <button
+              type="button"
               onClick={handleGetLocationAndDirections}
-              className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+              className="w-full py-3 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:ring-offset-1"
             >
               <Locate className="w-4 h-4" />
               {error ? "Recalculate Directions" : "Get My Location & Directions"}
@@ -288,7 +512,7 @@ export default function GPSLocationCard({ className = '' }) {
                 href={googleMapsDirectionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-slate-400 focus:ring-offset-1"
               >
                 Open Navigation
                 <ExternalLink className="w-3.5 h-3.5" />
@@ -297,31 +521,24 @@ export default function GPSLocationCard({ className = '' }) {
           </div>
         )}
 
-        {loading && (
-          <button
-            disabled
-            className="w-full py-3 px-4 bg-teal-100 text-teal-700 font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-wait"
-          >
-            <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
-            Getting location & fetching directions...
-          </button>
-        )}
-
         {routeData && !loading && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Secondary Action: Recalculate */}
             <button
+              type="button"
               onClick={handleGetLocationAndDirections}
-              className="py-2.5 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              className="py-2.5 px-3 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 hover:border-slate-300 font-semibold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs focus:outline-hidden focus:ring-2 focus:ring-slate-300 focus:ring-offset-1"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-3.5 h-3.5 text-slate-500" />
               Recalculate
             </button>
 
+            {/* Primary Action: Open Navigation */}
             <a
               href={googleMapsDirectionsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-2.5 px-3 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-xs rounded-xl shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              className="py-2.5 px-4 bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs rounded-xl shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer focus:outline-hidden focus:ring-2 focus:ring-teal-500 focus:ring-offset-1"
             >
               Open Navigation
               <ExternalLink className="w-3.5 h-3.5" />

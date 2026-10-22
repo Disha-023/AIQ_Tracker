@@ -17,7 +17,13 @@ import {
   ChevronRight,
   TrendingDown,
   Building2,
-  ShieldAlert
+  ShieldAlert,
+  Sparkles,
+  Stethoscope,
+  MapPin,
+  HeartPulse,
+  Compass,
+  ArrowUpRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -35,443 +41,552 @@ export default function LandingPage() {
     }
   };
 
+  const handleAppointmentClick = () => {
+    if (isAuthenticated) {
+      navigate('/patient/appointment');
+    } else {
+      navigate('/login');
+    }
+  };
+
+  const handleWalkInClick = () => {
+    if (isAuthenticated) {
+      navigate('/patient/walk-in');
+    } else {
+      navigate('/login');
+    }
+  };
+
   return (
-    <div className="bg-slate-50 min-h-full">
+    <div className="bg-white text-slate-900 font-sans selection:bg-teal-500 selection:text-white">
       
-      {/* HERO SECTION */}
-      <section className="bg-white border-b border-slate-200 py-12 sm:py-16">
+      {/* 1. HERO SECTION — THE SHOWPIECE */}
+      <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 lg:pt-20 lg:pb-32 overflow-hidden border-b border-slate-200/80">
+        {/* Soft atmospheric background glow */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-gradient-to-b from-teal-50/60 via-slate-50/40 to-transparent pointer-events-none -z-10" />
+        <div className="absolute top-20 right-10 w-96 h-96 rounded-full bg-teal-400/5 blur-3xl pointer-events-none -z-10" />
+        <div className="absolute top-40 left-10 w-96 h-96 rounded-full bg-sky-400/5 blur-3xl pointer-events-none -z-10" />
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          {/* Hero Header & Headline */}
+          <div className="text-center max-w-3xl mx-auto space-y-6">
+            
+            {/* Pill Tag */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-teal-200 text-teal-800 text-xs font-bold shadow-2xs">
+              <span className="flex h-2 w-2 relative">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-teal-600"></span>
+              </span>
+              Intelligent Hospital Operations &bull; Kole Hospital
+            </div>
+
+            {/* Editorial Bold Headline */}
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-950 tracking-tight leading-[1.08]">
+              Less Waiting. <br />
+              <span className="bg-gradient-to-r from-teal-700 via-teal-600 to-emerald-600 bg-clip-text text-transparent">
+                More Caring.
+              </span>
+            </h1>
+
+            {/* Supporting Editorial Subtitle */}
+            <p className="text-base sm:text-lg lg:text-xl text-slate-600 leading-relaxed font-normal max-w-2xl mx-auto">
+              Smarter appointments, real-time queue visibility, and traffic-aware hospital arrival planning — all in one connected experience.
+            </p>
+
+            {/* Primary Action Row */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 pt-2">
+              <button
+                onClick={handleAppointmentClick}
+                className="w-full sm:w-auto px-7 py-4 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-sm rounded-2xl shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2 cursor-pointer group"
+              >
+                <Calendar className="w-4 h-4 text-teal-200" />
+                Book an Appointment
+                <ArrowRight className="w-4 h-4 text-white group-hover:translate-x-1 transition-transform" />
+              </button>
+              <button
+                onClick={handleWalkInClick}
+                className="w-full sm:w-auto px-7 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm rounded-2xl border border-slate-200/90 shadow-2xs transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Clock className="w-4 h-4 text-teal-600" />
+                Join Walk-in Queue
+              </button>
+            </div>
+
+            {/* Professional Portal Redirect Link */}
+            <div className="pt-2 text-xs text-slate-500 font-medium">
+              Are you hospital personnel?{' '}
+              <Link to="/staff" className="font-bold text-teal-700 hover:text-teal-900 transition-colors inline-flex items-center gap-1">
+                Access Reception Desk or Admin Portal &rarr;
+              </Link>
+            </div>
+
+          </div>
+
+          {/* HERO VISUAL SHOWCASE: HIGH-FIDELITY DIGITAL CARE COCKPIT */}
+          <div className="mt-14 lg:mt-20 max-w-5xl mx-auto relative">
+            
+            {/* Ambient Shadow glow */}
+            <div className="absolute inset-4 bg-teal-600/10 rounded-3xl blur-2xl -z-10" />
+
+            {/* Elevated Cockpit Container */}
+            <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden">
+              
+              {/* Cockpit Window Top Bar */}
+              <div className="bg-slate-50/90 px-5 py-3 border-b border-slate-200/80 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-slate-300" />
+                  <div className="w-3 h-3 rounded-full bg-slate-300" />
+                  <div className="w-3 h-3 rounded-full bg-slate-300" />
+                  <span className="text-[11px] font-mono text-slate-400 ml-2">aiqtracker.hospital/patient/live-care</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    Live System Connected
+                  </span>
+                </div>
+              </div>
+
+              {/* Showcase Interior Content */}
+              <div className="p-6 sm:p-8 space-y-6">
+                
+                {/* Upper Consultation Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-teal-600 text-white font-extrabold text-lg flex items-center justify-center shadow-xs">
+                      AJ
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-extrabold text-slate-950 text-base">Dr. Ananya Joshi</h3>
+                        <span className="text-[10px] font-bold text-teal-800 bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">
+                          Cardiology Specialist
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                        OPD Consultation Room 104 &bull; Kole Hospital
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <div className="text-left sm:text-right">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Your Live Token</span>
+                      <span className="text-2xl font-black text-teal-700 font-mono">#28</span>
+                    </div>
+                    <span className="px-3 py-1 bg-emerald-50 text-emerald-800 text-xs font-bold rounded-xl border border-emerald-200">
+                      Confirmed
+                    </span>
+                  </div>
+                </div>
+
+                {/* Two-Column Telemetry Inside Showcase */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  
+                  {/* Left Mock Module: Live AI Queue Radar */}
+                  <div className="p-5 rounded-2xl bg-gradient-to-br from-teal-50/60 via-white to-emerald-50/40 border border-teal-200/80 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Brain className="w-4 h-4 text-teal-600" />
+                        <span className="font-bold text-xs text-teal-950">Live AI Queue Radar</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-teal-800 uppercase bg-teal-100 px-2 py-0.5 rounded-full">
+                        Pacing Active
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className="p-2.5 bg-white/90 rounded-xl border border-teal-100">
+                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Serving</span>
+                        <span className="text-lg font-black text-slate-900 font-mono mt-0.5 block">#22</span>
+                      </div>
+                      <div className="p-2.5 bg-white/90 rounded-xl border border-teal-100">
+                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Ahead</span>
+                        <span className="text-lg font-black text-teal-700 font-mono mt-0.5 block">5</span>
+                      </div>
+                      <div className="p-2.5 bg-white/90 rounded-xl border border-teal-100">
+                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">AI Wait</span>
+                        <span className="text-lg font-black text-emerald-600 mt-0.5 block">38–45m</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-white/90 rounded-xl border border-teal-100 text-xs flex items-center justify-between">
+                      <span className="text-slate-600">Expected Turn Time:</span>
+                      <strong className="text-teal-950 font-bold font-mono">11:45 AM</strong>
+                    </div>
+                  </div>
+
+                  {/* Right Mock Module: TomTom Traffic-Aware Arrival Planner */}
+                  <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4 text-teal-600" />
+                        <span className="font-bold text-xs text-slate-900">Traffic-Aware Arrival Planner</span>
+                      </div>
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                        TomTom Routing
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center text-xs">
+                      <div className="p-2.5 bg-white rounded-xl border border-slate-200/70">
+                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Road Distance</span>
+                        <span className="text-base font-black text-slate-900 mt-0.5 block">15.5 km</span>
+                      </div>
+                      <div className="p-2.5 bg-white rounded-xl border border-slate-200/70">
+                        <span className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider block">Live Traffic ETA</span>
+                        <span className="text-base font-black text-teal-700 mt-0.5 block">~35 min</span>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-teal-50/80 rounded-xl border border-teal-200/70 text-xs flex items-center justify-between">
+                      <span className="text-teal-900 font-medium">Recommended Departure:</span>
+                      <strong className="text-teal-800 font-extrabold font-mono text-sm">11:10 AM</strong>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* 2. THE PATIENT JOURNEY — CONNECTED STORYTELLING */}
+      <section id="journey" className="py-20 sm:py-28 bg-[#F8FAFC] border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center max-w-2xl mx-auto space-y-3 mb-16">
+            <span className="text-xs font-bold text-teal-700 uppercase tracking-widest block">
+              Patient Care Journey
+            </span>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+              From Home to Consultation, Reimagined
+            </h2>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+              Experience a connected healthcare visit that eliminates the hours spent in crowded hospital waiting lounges.
+            </p>
+          </div>
+
+          {/* 4-Stage Connected Journey Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+            
+            {/* Step 1 */}
+            <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 font-extrabold text-lg flex items-center justify-center border border-teal-100 shadow-2xs">
+                  01
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Reserve Your Consultation</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Book a specialist appointment online for your preferred time slot, or generate an instant OPD walk-in queue slip.
+                </p>
+              </div>
+              <span className="text-[11px] font-bold text-teal-700 inline-flex items-center gap-1">
+                Specialist Selection &rarr;
+              </span>
+            </div>
+
+            {/* Step 2 */}
+            <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 font-extrabold text-lg flex items-center justify-center border border-teal-100 shadow-2xs">
+                  02
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Monitor Live Token Radar</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Track the doctor's live queue pace and exactly how many patients are ahead of you from the comfort of your home.
+                </p>
+              </div>
+              <span className="text-[11px] font-bold text-teal-700 inline-flex items-center gap-1">
+                Real-Time Queuing &rarr;
+              </span>
+            </div>
+
+            {/* Step 3 */}
+            <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 font-extrabold text-lg flex items-center justify-center border border-teal-100 shadow-2xs">
+                  03
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Calibrate Travel with GPS</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  TomTom traffic-aware navigation calculates road delays and notifies you of the exact departure time to reach on schedule.
+                </p>
+              </div>
+              <span className="text-[11px] font-bold text-teal-700 inline-flex items-center gap-1">
+                Live Traffic ETA &rarr;
+              </span>
+            </div>
+
+            {/* Step 4 */}
+            <div className="bg-white rounded-3xl p-7 border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-6">
+              <div className="space-y-4">
+                <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 font-extrabold text-lg flex items-center justify-center border border-teal-100 shadow-2xs">
+                  04
+                </div>
+                <h3 className="text-lg font-bold text-slate-900">Walk In On Time</h3>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Step straight into your physician's consultation room right as your token is announced, with zero waiting room fatigue.
+                </p>
+              </div>
+              <span className="text-[11px] font-bold text-teal-700 inline-flex items-center gap-1">
+                Doctor Consultation &rarr;
+              </span>
+            </div>
+
+          </div>
+
+        </div>
+      </section>
+
+      {/* 3. PURPOSEFUL FEATURE SHOWCASE (ASYMMETRICAL EDITORIAL LAYOUT) */}
+      <section id="features" className="py-20 sm:py-28 bg-white border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-24">
+          
+          {/* Feature 1: Traffic-Aware Departure (Left 7 cols / Right 5 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div className="lg:col-span-7 space-y-6">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200/80">
+                <Car className="w-3.5 h-3.5 text-teal-600" />
+                Live Traffic Intelligence
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight leading-snug">
+                Know When to Leave Home. <br />
+                <span className="text-teal-700">Not Just When to Arrive.</span>
+              </h2>
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                Ordinary hospital systems give you a static appointment time and leave you to wait in crowded lobbies. AIQ Tracker continuously monitors live road congestion with TomTom Routing, computing your driving distance and recommending the ideal departure minute.
+              </p>
+              <div className="space-y-3 text-xs sm:text-sm text-slate-700 pt-1">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Real-time road routing using primary TomTom Traffic API with Geoapify fallback</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Departure advisory synchronized with live queue pacing</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>1-click Google Maps handoff for turn-by-turn driving directions</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Illustrative Telemetry Card */}
+            <div className="lg:col-span-5">
+              <div className="bg-slate-50 p-6 sm:p-7 rounded-3xl border border-slate-200/90 shadow-xs space-y-4">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Departure Advisory</span>
+                  <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200">
+                    On Schedule
+                  </span>
+                </div>
+
+                <div className="space-y-2.5 text-xs">
+                  <div className="flex justify-between p-3 rounded-2xl bg-white border border-slate-200/70">
+                    <span className="text-slate-500 font-medium">Predicted Waiting Time:</span>
+                    <strong className="text-slate-900">45 minutes</strong>
+                  </div>
+                  <div className="flex justify-between p-3 rounded-2xl bg-white border border-slate-200/70">
+                    <span className="text-slate-500 font-medium">Road Driving Duration:</span>
+                    <strong className="text-teal-700">35 minutes (Live Traffic)</strong>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] font-bold text-teal-800 uppercase tracking-wider block">Recommended Leave Time</span>
+                      <strong className="text-xl font-extrabold text-teal-950 font-mono">11:10 AM</strong>
+                    </div>
+                    <span className="text-xs font-bold text-teal-800 bg-white px-3 py-1.5 rounded-xl border border-teal-200 shadow-2xs">
+                      Ready in 25 min
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Feature 2: Dynamic AI Queue Engine (Right 7 cols / Left 5 cols) */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             
-            {/* Left Hero Content */}
-            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-xs font-semibold">
-                <Activity className="w-4 h-4 text-teal-600" />
-                AIQ Tracker &bull; Smart Appointment & Queue Management
+            {/* Illustrative AI Prediction Card */}
+            <div className="lg:col-span-5 order-2 lg:order-1">
+              <div className="bg-gradient-to-br from-teal-900 to-slate-900 text-white p-6 sm:p-7 rounded-3xl border border-teal-800/50 shadow-md space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <span className="text-xs font-bold text-teal-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Brain className="w-3.5 h-3.5 text-teal-300" />
+                    AI Queue Calculation
+                  </span>
+                  <span className="text-[10px] font-bold bg-white/10 text-teal-200 px-2 py-0.5 rounded-full">
+                    95% Confidence
+                  </span>
+                </div>
+
+                <div className="text-center py-2">
+                  <span className="text-[11px] text-teal-200 uppercase font-bold tracking-wider block">Predicted Wait Window</span>
+                  <div className="text-4xl font-extrabold text-white mt-1 tracking-tight font-mono">
+                    38–45 min
+                  </div>
+                  <span className="text-xs text-teal-300 mt-1 inline-block">Estimated Turn: 11:45 AM</span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs text-slate-300 pt-2 border-t border-white/10">
+                  <div className="p-2.5 bg-white/5 rounded-xl">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase">Doctor Pace</span>
+                    <strong className="text-white">7 min/patient</strong>
+                  </div>
+                  <div className="p-2.5 bg-white/5 rounded-xl">
+                    <span className="text-[10px] text-slate-400 block font-bold uppercase">Lounge Density</span>
+                    <strong className="text-white">5 Patients Ahead</strong>
+                  </div>
+                </div>
               </div>
+            </div>
 
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                Smarter Hospital Visits, <br className="hidden sm:inline" />
-                <span className="text-teal-600">Less Time Waiting.</span>
-              </h1>
-
-              <p className="text-base sm:text-lg text-slate-600 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                AIQ Tracker helps patients manage appointments, track live queues, estimate waiting time, and plan when to leave for the hospital.
+            {/* Content Column */}
+            <div className="lg:col-span-7 space-y-6 order-1 lg:order-2">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-bold border border-teal-200/80">
+                <Brain className="w-3.5 h-3.5 text-teal-600" />
+                Dynamic Queue Modeling
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight leading-snug">
+                Predictive Queue Pacing <br />
+                <span className="text-teal-700">Calibrated to Reality.</span>
+              </h2>
+              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
+                Hospital consultation queues aren't simple stopwatches. AIQ Tracker analyzes doctor consultation duration, patient turnaround pace, and active room counts to continuously calibrate the most accurate wait-time window for each patient.
               </p>
+              <div className="space-y-3 text-xs sm:text-sm text-slate-700 pt-1">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Dynamic recalculation when doctor consultation durations shift</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Transparent visual counter showing exactly how many patients are ahead</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Audio chime call alerts and real-time status changes</span>
+                </div>
+              </div>
+            </div>
 
-              <div className="text-teal-700 font-semibold text-sm tracking-wide">
-                "Know your waiting time. Know when to leave."
+          </div>
+
+          {/* Feature 3: Integrated Hospital Portals (3-Column Grid) */}
+          <div className="pt-8 space-y-12">
+            <div className="text-center max-w-2xl mx-auto space-y-3">
+              <span className="text-xs font-bold text-teal-700 uppercase tracking-widest block">
+                Hospital Ecosystem
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-950 tracking-tight">
+                Three Connected Portals in One System
+              </h2>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                Each hospital stakeholder interacts with a tailored interface built specifically for their operational responsibilities.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* Portal 1: Patient */}
+              <div className="bg-slate-50 p-7 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-teal-100 text-teal-700 flex items-center justify-center">
+                    <UserCheck className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">Patient Care Portal</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Self-service appointment booking, live token radar, TomTom traffic arrival planning, and prescription visit records.
+                  </p>
+                </div>
+                <Link
+                  to="/login"
+                  className="text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1 pt-2 border-t border-slate-200/70"
+                >
+                  Access Patient Portal &rarr;
+                </Link>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                <button
-                  onClick={handleCtaClick}
-                  className="w-full sm:w-auto px-6 py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm rounded-xl shadow-xs transition-colors inline-flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Calendar className="w-4 h-4" />
-                  Book an Appointment
-                </button>
-                <button
-                  onClick={handleCtaClick}
-                  className="w-full sm:w-auto px-6 py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold text-sm rounded-xl shadow-xs transition-colors inline-flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Clock className="w-4 h-4 text-teal-600" />
-                  Join Walk-in Queue
-                </button>
-              </div>
-
-              {/* Separate Professional Links for Hospital Staff & Admin Portals */}
-              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-4 text-xs font-semibold text-slate-500 border-t border-slate-100">
-                <span className="text-slate-400 font-medium">Hospital Personnel:</span>
+              {/* Portal 2: Reception Desk */}
+              <div className="bg-slate-50 p-7 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-800 flex items-center justify-center">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">Front Desk Workstation</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Walk-in patient registration, instant token issuance, 1-click arrival check-in, and real-time doctor room dispatching.
+                  </p>
+                </div>
                 <Link
                   to="/staff-login"
-                  className="inline-flex items-center gap-1.5 text-slate-700 hover:text-teal-700 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200"
+                  className="text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1 pt-2 border-t border-slate-200/70"
                 >
-                  <Building2 className="w-3.5 h-3.5 text-teal-600" />
-                  Hospital Staff Portal &rarr;
+                  Access Reception Station &rarr;
                 </Link>
+              </div>
+
+              {/* Portal 3: Administration */}
+              <div className="bg-slate-50 p-7 rounded-3xl border border-slate-200/90 shadow-2xs space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+                    <ShieldAlert className="w-5 h-5" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">Hospital Command Center</h3>
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    Hospital-wide queue telemetry, doctor shift rosters, clinical department utilization, and operational analytics.
+                  </p>
+                </div>
                 <Link
                   to="/admin-login"
-                  className="inline-flex items-center gap-1.5 text-slate-700 hover:text-purple-700 transition-colors bg-purple-50 px-3 py-1.5 rounded-lg border border-purple-200"
+                  className="text-xs font-bold text-teal-700 hover:text-teal-900 inline-flex items-center gap-1 pt-2 border-t border-slate-200/70"
                 >
-                  <ShieldAlert className="w-3.5 h-3.5 text-purple-600" />
-                  Administration Portal &rarr;
+                  Access Command Suite &rarr;
                 </Link>
               </div>
+
             </div>
-
-            {/* Right Hero Healthcare Visual Card (Patient -> AI Prediction -> Hospital) */}
-            <div className="lg:col-span-5">
-              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm relative">
-                <div className="flex justify-between items-center pb-4 border-b border-slate-200 mb-4">
-                  <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Live Flow Indicator
-                  </span>
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>
-                    Active System
-                  </span>
-                </div>
-
-                {/* 3 Step Visual Pipeline */}
-                <div className="space-y-3">
-                  {/* Step 1: Patient */}
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center justify-between shadow-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">
-                        01
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">Patient Request</h4>
-                        <p className="text-[11px] text-slate-500">Token #27 &bull; General OPD</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-1 rounded">Joined Queue</span>
-                  </div>
-
-                  <div className="flex justify-center text-teal-600">
-                    <ChevronRight className="w-5 h-5 rotate-90" />
-                  </div>
-
-                  {/* Step 2: AI Prediction */}
-                  <div className="bg-white p-3.5 rounded-xl border border-teal-200 bg-teal-50/50 flex items-center justify-between shadow-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-teal-600 text-white flex items-center justify-center">
-                        <Brain className="w-5 h-5" />
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">AI Waiting Engine</h4>
-                        <p className="text-[11px] text-teal-700 font-medium">Estimated wait: 38–45 min</p>
-                      </div>
-                    </div>
-                    <span className="text-[11px] font-bold text-teal-800 bg-teal-100 px-2 py-1 rounded">5 Ahead</span>
-                  </div>
-
-                  <div className="flex justify-center text-teal-600">
-                    <ChevronRight className="w-5 h-5 rotate-90" />
-                  </div>
-
-                  {/* Step 3: Hospital Desk */}
-                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center justify-between shadow-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-sm">
-                        03
-                      </div>
-                      <div>
-                        <h4 className="text-xs font-bold text-slate-900">Hospital Consultation</h4>
-                        <p className="text-[11px] text-slate-500">Recommended departure: 3:30 PM</p>
-                      </div>
-                    </div>
-                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded">On Time</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS SECTION */}
-      <section id="how-it-works" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-xs font-bold text-teal-700 uppercase tracking-widest mb-2">Simple 4-Step Process</h2>
-          <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">How AIQ Tracker Works</h3>
-          <p className="text-slate-600 text-sm mt-2 max-w-xl mx-auto">
-            Streamlining your hospital experience from token allocation to doctor consultation.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs relative">
-            <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-700 font-bold flex items-center justify-center mb-4 text-base">
-              1
-            </div>
-            <h4 className="text-lg font-semibold text-slate-900 mb-2">Book or Join Queue</h4>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Schedule an online appointment or join the live OPD walk-in queue from your phone.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs relative">
-            <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-700 font-bold flex items-center justify-center mb-4 text-base">
-              2
-            </div>
-            <h4 className="text-lg font-semibold text-slate-900 mb-2">Get Your Token</h4>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Receive a digital queue token with real-time status updates on patients ahead of you.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs relative">
-            <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-700 font-bold flex items-center justify-center mb-4 text-base">
-              3
-            </div>
-            <h4 className="text-lg font-semibold text-slate-900 mb-2">Track AI Waiting Time</h4>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Dynamic AI calculations continuously update your predicted doctor consultation time.
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs relative">
-            <div className="w-10 h-10 rounded-lg bg-teal-100 text-teal-700 font-bold flex items-center justify-center mb-4 text-base">
-              4
-            </div>
-            <h4 className="text-lg font-semibold text-slate-900 mb-2">Arrive at Right Time</h4>
-            <p className="text-slate-600 text-sm leading-relaxed">
-              Receive departure notifications and arrive right when the doctor is ready for you.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES SECTION */}
-      <section id="features" className="py-16 bg-white border-y border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-xs font-bold text-teal-700 uppercase tracking-widest mb-2">Core Platform Capabilities</h2>
-            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">Key System Features</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-xs">
-              <Calendar className="w-8 h-8 text-teal-600 mb-4" />
-              <h4 className="font-bold text-slate-900 text-base mb-2">Smart Appointment Booking</h4>
-              <p className="text-slate-600 text-sm">Select preferred doctors, specialties, and convenient time slots with ease.</p>
-            </div>
-
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-xs">
-              <Clock className="w-8 h-8 text-teal-600 mb-4" />
-              <h4 className="font-bold text-slate-900 text-base mb-2">Live Queue Tracking</h4>
-              <p className="text-slate-600 text-sm">Monitor current doctor consultations and live patient queue movement in real time.</p>
-            </div>
-
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-xs">
-              <Brain className="w-8 h-8 text-teal-600 mb-4" />
-              <h4 className="font-bold text-slate-900 text-base mb-2">AI Waiting-Time Prediction</h4>
-              <p className="text-slate-600 text-sm">Accurate waiting estimations based on consultation pace and emergency queues.</p>
-            </div>
-
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-xs">
-              <Navigation className="w-8 h-8 text-teal-600 mb-4" />
-              <h4 className="font-bold text-slate-900 text-base mb-2">GPS-Based Travel Estimation</h4>
-              <p className="text-slate-600 text-sm">Integrates travel duration so you know exact departure time from home.</p>
-            </div>
-
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-xs">
-              <Bell className="w-8 h-8 text-teal-600 mb-4" />
-              <h4 className="font-bold text-slate-900 text-base mb-2">Smart Notifications</h4>
-              <p className="text-slate-600 text-sm">Timely alerts when your token is near, preventing missed appointments.</p>
-            </div>
-
-            <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-xs">
-              <FileText className="w-8 h-8 text-teal-600 mb-4" />
-              <h4 className="font-bold text-slate-900 text-base mb-2">Digital Visit History</h4>
-              <p className="text-slate-600 text-sm">Keep comprehensive digital records of past hospital consultations and tokens.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* AI WAITING-TIME SECTION ("Know Before You Go") */}
-      <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center bg-teal-900 text-white rounded-2xl p-8 sm:p-12 shadow-sm">
-          <div className="lg:col-span-7 space-y-4">
-            <span className="px-3 py-1 bg-teal-800 text-teal-200 rounded-full text-xs font-semibold">
-              Predictive AI Engine
-            </span>
-            <h3 className="text-2xl sm:text-4xl font-bold tracking-tight">Know Before You Go</h3>
-            <p className="text-teal-100 text-sm sm:text-base leading-relaxed">
-              No more sitting for hours in overcrowded hospital waiting rooms. AIQ Tracker dynamically calculates waiting time based on historical consultation speeds, active emergency tokens, and doctor availability.
-            </p>
-            <div className="flex items-center gap-3 pt-2 text-xs font-semibold text-teal-200">
-              <CheckCircle2 className="w-4 h-4 text-teal-400" /> Dynamic Queue Adjustments
-              <CheckCircle2 className="w-4 h-4 text-teal-400" /> Emergency Prioritization
-            </div>
-          </div>
-
-          {/* Mock Prediction Card */}
-          <div className="lg:col-span-5">
-            <div className="bg-white text-slate-900 rounded-xl p-6 shadow-lg border border-teal-700">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-200 mb-4">
-                <span className="text-xs font-bold text-slate-500 uppercase">Live Token Preview</span>
-                <span className="px-2 py-0.5 bg-teal-100 text-teal-800 text-xs font-bold rounded">Active</span>
-              </div>
-              <div className="text-center my-4">
-                <div className="text-3xl font-extrabold text-teal-700">Token #27</div>
-                <div className="text-xs text-slate-500 mt-1">General OPD &bull; Dr. Smith</div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div>
-                  <span className="block text-[10px] text-slate-500 uppercase font-bold">Ahead</span>
-                  <span className="text-sm font-extrabold text-slate-800">5</span>
-                </div>
-                <div className="border-x border-slate-200">
-                  <span className="block text-[10px] text-slate-500 uppercase font-bold">AI Wait</span>
-                  <span className="text-sm font-extrabold text-teal-700">38–45 min</span>
-                </div>
-                <div>
-                  <span className="block text-[10px] text-slate-500 uppercase font-bold">Turn</span>
-                  <span className="text-sm font-extrabold text-slate-800">4:05 PM</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* TRAVEL TIME SECTION ("Know When to Leave") */}
-      <section className="py-12 bg-white border-t border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-            
-            {/* Mock Travel UI Card */}
-            <div className="lg:col-span-5 order-2 lg:order-1">
-              <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 shadow-xs">
-                <div className="flex items-center justify-between pb-3 border-b border-slate-200 mb-4">
-                  <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                    <Car className="w-4 h-4 text-teal-600" />
-                    Smart Departure Recommendation
-                  </div>
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 border border-emerald-200">
-                    You're on time
-                  </span>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center text-sm py-1.5 border-b border-slate-200">
-                    <span className="text-slate-600">Waiting Time:</span>
-                    <span className="font-bold text-slate-900">45 min</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-1.5 border-b border-slate-200">
-                    <span className="text-slate-600">Travel Time:</span>
-                    <span className="font-bold text-slate-900">24 min</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm py-1.5 bg-teal-50 p-2.5 rounded-lg border border-teal-200">
-                    <span className="font-semibold text-teal-900">Recommended Departure:</span>
-                    <span className="font-extrabold text-teal-700 text-base">3:30 PM</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Travel Section Description */}
-            <div className="lg:col-span-7 space-y-4 order-1 lg:order-2">
-              <span className="text-xs font-bold text-teal-700 uppercase tracking-widest">Travel Optimization</span>
-              <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">Know When to Leave</h3>
-              <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-                AIQ Tracker synchronizes your predicted consultation turn with real-time travel duration. Relax at home or at work until the system recommends the ideal time to head to the hospital.
-              </p>
-              <div className="flex flex-wrap gap-4 text-xs font-semibold text-slate-700 pt-2">
-                <span className="inline-flex items-center gap-1"><TrendingDown className="w-4 h-4 text-teal-600" /> Zero Waiting Room Stress</span>
-                <span className="inline-flex items-center gap-1"><Clock className="w-4 h-4 text-teal-600" /> Timely Departure Alerts</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* BENEFITS SECTION */}
-      <section id="about" className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-12">
-          <h2 className="text-xs font-bold text-teal-700 uppercase tracking-widest mb-2">Designed for Hospital Ecosystems</h2>
-          <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">Benefits for Everyone</h3>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          
-          {/* Patients Benefit */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
-            <div className="w-12 h-12 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-              <UserCheck className="w-6 h-6" />
-            </div>
-            <h4 className="text-lg font-bold text-slate-900 mb-3">For Patients</h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Less unnecessary hospital waiting time</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Better planning for work and family</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                <span>Live queue and status transparency</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Receptionists Benefit */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
-            <div className="w-12 h-12 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center mb-4">
-              <Users className="w-6 h-6" />
-            </div>
-            <h4 className="text-lg font-bold text-slate-900 mb-3">For Receptionists</h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <span>Easier queue and patient management</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <span>Faster patient check-in & dispatch</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                <span>Digital consultation & walk-in records</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Admin Benefit */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-xs">
-            <div className="w-12 h-12 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center mb-4">
-              <Shield className="w-6 h-6" />
-            </div>
-            <h4 className="text-lg font-bold text-slate-900 mb-3">For Administration</h4>
-            <ul className="space-y-2 text-sm text-slate-600">
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                <span>Better hospital operational insights</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                <span>Historical consultation data records</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                <span>AI queue performance analytics</span>
-              </li>
-            </ul>
           </div>
 
         </div>
       </section>
 
-      {/* FINAL CALL TO ACTION */}
-      <section className="bg-white border-t border-slate-200 py-16 text-center">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Ready for a smarter hospital visit?
+      {/* 4. FINAL CALL TO ACTION */}
+      <section className="py-20 sm:py-28 bg-[#F8FAFC]">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-50 border border-teal-200 text-teal-800 text-xs font-bold shadow-2xs">
+            <HeartPulse className="w-3.5 h-3.5 text-teal-600" />
+            Modern Hospital Navigation
+          </div>
+          <h2 className="text-3xl sm:text-5xl font-extrabold text-slate-950 tracking-tight">
+            Ready for a Smarter Hospital Visit?
           </h2>
-          <p className="text-slate-600 text-base max-w-xl mx-auto">
-            Join AIQ Tracker today to book appointments, track live OPD queues, and avoid long waiting room delays.
+          <p className="text-slate-600 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+            Reserve your consultation slot online or check real-time OPD queue status before leaving home.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <button
-              onClick={handleCtaClick}
-              className="px-6 py-3.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm rounded-xl shadow-xs transition-colors cursor-pointer"
+              onClick={handleAppointmentClick}
+              className="w-full sm:w-auto px-8 py-4 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-sm rounded-2xl shadow-sm hover:shadow-md transition-all inline-flex items-center justify-center gap-2 cursor-pointer"
             >
-              Book Appointment
+              <Calendar className="w-4 h-4 text-teal-200" />
+              Book Specialist Appointment
             </button>
-            <button
-              onClick={handleCtaClick}
-              className="px-6 py-3.5 bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-300 font-semibold text-sm rounded-xl shadow-xs transition-colors cursor-pointer"
+            <Link
+              to="/login"
+              className="w-full sm:w-auto px-8 py-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-sm rounded-2xl border border-slate-200/90 shadow-2xs transition-all inline-flex items-center justify-center gap-2"
             >
-              Join Walk-in Queue
-            </button>
+              Sign In to Patient Portal &rarr;
+            </Link>
           </div>
         </div>
       </section>

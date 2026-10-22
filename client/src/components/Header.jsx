@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Activity, LogIn, UserPlus, LogOut, Menu, X, User } from 'lucide-react';
+import { Activity, LogIn, UserPlus, LogOut, Menu, X, User, Building2, ChevronRight } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 export default function Header() {
@@ -24,59 +24,54 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-xs">
+    <header className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-50 transition-all font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-18">
           
-          {/* Logo & Brand Name */}
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-10 h-10 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-xs group-hover:bg-teal-700 transition-colors">
-              <Activity className="w-6 h-6" />
+          {/* Logo & Brand Treatment */}
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-teal-500 to-teal-700 flex items-center justify-center text-white shadow-xs group-hover:scale-105 transition-transform">
+              <Activity className="w-5 h-5" />
             </div>
             <div>
-              <span className="text-xl font-bold text-slate-900 tracking-tight block leading-none">
+              <span className="text-xl font-extrabold text-slate-950 tracking-tight block leading-none">
                 AIQ Tracker
               </span>
-              <span className="text-xs text-teal-700 font-medium tracking-wide">
+              <span className="text-[11px] text-teal-700 font-semibold tracking-wide">
                 Smart Hospital Queue
               </span>
             </div>
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-6">
+          <nav className="hidden md:flex items-center gap-8">
             <Link
               to="/"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/') ? 'text-teal-700 font-semibold' : 'text-slate-600 hover:text-teal-600'
+              className={`text-sm font-semibold transition-colors ${
+                isActive('/') ? 'text-teal-700' : 'text-slate-600 hover:text-teal-700'
               }`}
             >
               Home
             </Link>
             <a
-              href="/#how-it-works"
-              className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors"
+              href="/#journey"
+              className="text-sm font-semibold text-slate-600 hover:text-teal-700 transition-colors"
             >
-              How It Works
+              Patient Journey
             </a>
             <a
               href="/#features"
-              className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors"
+              className="text-sm font-semibold text-slate-600 hover:text-teal-700 transition-colors"
             >
-              Features
-            </a>
-            <a
-              href="/#about"
-              className="text-sm font-medium text-slate-600 hover:text-teal-600 transition-colors"
-            >
-              About
+              System Features
             </a>
             <Link
               to="/staff"
-              className={`text-sm font-medium transition-colors ${
-                isActive('/staff') ? 'text-teal-700 font-semibold' : 'text-slate-600 hover:text-teal-600'
+              className={`text-sm font-semibold transition-colors flex items-center gap-1.5 ${
+                isActive('/staff') ? 'text-teal-700' : 'text-slate-600 hover:text-teal-700'
               }`}
             >
+              <Building2 className="w-4 h-4 text-slate-400 group-hover:text-teal-600" />
               Staff Portal
             </Link>
           </nav>
@@ -87,17 +82,19 @@ export default function Header() {
               <div className="flex items-center gap-3">
                 <Link
                   to={getDashboardPath()}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-50 border border-teal-200 text-xs font-semibold text-teal-800 hover:bg-teal-100 transition-colors"
+                  className="flex items-center gap-2.5 px-3.5 py-2 rounded-2xl bg-teal-50/80 border border-teal-200/80 text-xs font-bold text-teal-900 hover:bg-teal-100/70 transition-all shadow-2xs"
                 >
-                  <User className="w-4 h-4 text-teal-600" />
-                  <span>{user?.name || 'Dashboard'}</span>
-                  <span className="capitalize px-1.5 py-0.5 rounded bg-teal-600 text-white text-[10px] tracking-wide">
+                  <div className="w-6 h-6 rounded-full bg-teal-600 text-white flex items-center justify-center text-[11px] font-bold">
+                    {user?.name ? user.name.charAt(0) : 'U'}
+                  </div>
+                  <span>{user?.name || 'My Dashboard'}</span>
+                  <span className="capitalize px-2 py-0.5 rounded-full bg-teal-600 text-white text-[10px] tracking-wide font-bold">
                     {user?.role}
                   </span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium text-slate-700 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-slate-500 hover:text-rose-600 hover:bg-rose-50/60 rounded-xl transition-all cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout
@@ -107,17 +104,17 @@ export default function Header() {
               <>
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-slate-700 hover:text-teal-700 hover:bg-slate-100 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-slate-700 hover:text-teal-800 hover:bg-slate-50 rounded-xl transition-all"
                 >
-                  <LogIn className="w-4 h-4" />
-                  Login
+                  <LogIn className="w-4 h-4 text-slate-500" />
+                  Sign In
                 </Link>
                 <Link
                   to="/register"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 rounded-lg shadow-xs transition-colors"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 active:bg-teal-800 rounded-xl shadow-xs hover:shadow-sm transition-all"
                 >
                   <UserPlus className="w-4 h-4" />
-                  Register
+                  Get Started
                 </Link>
               </>
             )}
@@ -127,7 +124,7 @@ export default function Header() {
           <div className="md:hidden flex items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 text-slate-600 hover:text-slate-900 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="p-2.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-xl focus:outline-none transition-colors cursor-pointer"
               aria-label="Toggle mobile menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
@@ -138,62 +135,56 @@ export default function Header() {
 
       {/* Mobile Navigation Menu Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 bg-white px-4 pt-2 pb-4 space-y-3 shadow-lg">
-          <nav className="flex flex-col space-y-2">
+        <div className="md:hidden border-t border-slate-200 bg-white px-5 pt-3 pb-5 space-y-4 shadow-lg animate-in fade-in slide-in-from-top-2 duration-200">
+          <nav className="flex flex-col space-y-1">
             <Link
               to="/"
               onClick={() => setMobileMenuOpen(false)}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${
-                isActive('/') ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+              className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors ${
+                isActive('/') ? 'bg-teal-50 text-teal-700' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
               Home
             </Link>
             <a
-              href="/#how-it-works"
+              href="/#journey"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
             >
-              How It Works
+              Patient Journey
             </a>
             <a
               href="/#features"
               onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="px-3.5 py-2.5 rounded-xl text-xs font-bold text-slate-700 hover:bg-slate-50"
             >
-              Features
-            </a>
-            <a
-              href="/#about"
-              onClick={() => setMobileMenuOpen(false)}
-              className="px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              About
+              System Features
             </a>
             <Link
               to="/staff"
               onClick={() => setMobileMenuOpen(false)}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${
-                isActive('/staff') ? 'bg-teal-50 text-teal-700 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+              className={`px-3.5 py-2.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-between ${
+                isActive('/staff') ? 'bg-teal-50 text-teal-700' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
-              Staff Portal
+              <span>Staff & Admin Portal</span>
+              <ChevronRight className="w-4 h-4 text-slate-400" />
             </Link>
           </nav>
 
-          <div className="pt-3 border-t border-slate-200 flex flex-col gap-2">
+          <div className="pt-3 border-t border-slate-100 flex flex-col gap-2">
             {isAuthenticated ? (
               <>
                 <Link
                   to={getDashboardPath()}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center px-4 py-2 text-sm font-semibold text-teal-800 bg-teal-50 border border-teal-200 rounded-lg"
+                  className="w-full text-center px-4 py-2.5 text-xs font-bold text-teal-900 bg-teal-50 border border-teal-200 rounded-xl"
                 >
-                  Dashboard ({user?.role})
+                  Open Dashboard ({user?.role})
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="w-full text-center px-4 py-2 text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 rounded-lg"
+                  className="w-full text-center px-4 py-2.5 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-colors cursor-pointer"
                 >
                   Logout
                 </button>
@@ -203,16 +194,16 @@ export default function Header() {
                 <Link
                   to="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center px-4 py-2 text-sm font-semibold text-slate-700 border border-slate-300 rounded-lg hover:bg-slate-50"
+                  className="w-full text-center px-4 py-2.5 text-xs font-bold text-slate-700 border border-slate-200 rounded-xl hover:bg-slate-50"
                 >
-                  Login
+                  Patient Sign In
                 </Link>
                 <Link
                   to="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center px-4 py-2 text-sm font-semibold text-white bg-teal-600 rounded-lg hover:bg-teal-700 shadow-xs"
+                  className="w-full text-center px-4 py-2.5 text-xs font-bold text-white bg-teal-600 rounded-xl hover:bg-teal-700 shadow-xs"
                 >
-                  Register
+                  Register Account
                 </Link>
               </>
             )}

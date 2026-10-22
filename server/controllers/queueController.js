@@ -281,20 +281,20 @@ async function updateQueueEntry(req, res) {
 
     await client.query(
       `UPDATE queue_entries
-       SET priority = $1,
-           status = $2,
-           queue_position = CASE WHEN $3 THEN queue_position ELSE 0 END,
+       SET priority = $1::varchar,
+           status = $2::varchar,
+           queue_position = CASE WHEN $3::boolean THEN queue_position ELSE 0 END,
            check_in_time = CASE
-             WHEN $2 = 'SERVING'
+             WHEN $2::varchar = 'SERVING'
              THEN COALESCE(check_in_time, CURRENT_TIMESTAMP)
              ELSE check_in_time
            END,
            completed_at = CASE
-             WHEN $2 IN ('COMPLETED', 'CANCELLED')
+             WHEN $2::varchar IN ('COMPLETED', 'CANCELLED')
              THEN COALESCE(completed_at, CURRENT_TIMESTAMP)
              ELSE completed_at
            END
-       WHERE queue_id = $4`,
+       WHERE queue_id = $4::varchar`,
       [newPriority, newStatus, isWaiting, queueId]
     );
 

@@ -5,7 +5,6 @@ import {
   LayoutDashboard,
   Calendar,
   Users,
-  Ticket,
   Search,
   UserPlus,
   ClipboardList,
@@ -46,28 +45,28 @@ export default function ReceptionistLayout() {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex bg-slate-50 text-slate-900">
+    <div className="min-h-screen flex bg-slate-50 text-slate-900 font-sans">
       
-      {/* DESKTOP RECEPTIONIST LEFT SIDEBAR */}
-      <aside className="hidden lg:flex flex-col w-64 bg-slate-900 text-slate-300 border-r border-slate-800 sticky top-0 h-screen shrink-0">
+      {/* DESKTOP RECEPTIONIST LEFT SIDEBAR (BRIGHT MODERN THEME) */}
+      <aside className="hidden lg:flex flex-col w-64 bg-white text-slate-700 border-r border-slate-200/90 sticky top-0 h-screen shrink-0 shadow-2xs">
         
         {/* Brand Header */}
-        <div className="p-6 border-b border-slate-800 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-xs">
+        <div className="p-5 border-b border-slate-100 flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-600 to-cyan-700 flex items-center justify-center text-white shadow-xs">
             <Building2 className="w-5 h-5" />
           </div>
           <div>
-            <span className="text-lg font-bold text-white tracking-tight block leading-none">
+            <span className="text-lg font-extrabold text-slate-900 tracking-tight block leading-none">
               AIQ Tracker
             </span>
-            <span className="text-[11px] text-blue-400 font-semibold tracking-wide">
+            <span className="text-[11px] text-teal-600 font-bold tracking-wide uppercase">
               Reception Desk
             </span>
           </div>
         </div>
 
         {/* Sidebar Nav Links */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-3.5 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -75,20 +74,20 @@ export default function ReceptionistLayout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                   active
-                    ? 'bg-blue-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                    ? 'bg-teal-600 text-white shadow-xs shadow-teal-600/20'
+                    : 'text-slate-600 hover:bg-teal-50/60 hover:text-teal-800'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <Icon className="w-4 h-4" />
+                  <Icon className={`w-4 h-4 ${active ? 'text-white' : 'text-slate-400'}`} />
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
                   <span
-                    className={`text-[11px] px-2 py-0.5 rounded-full font-bold ${
-                      active ? 'bg-white text-blue-900' : 'bg-blue-900 text-blue-300'
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      active ? 'bg-white/20 text-white' : 'bg-teal-100 text-teal-800'
                     }`}
                   >
                     {item.badge}
@@ -100,12 +99,12 @@ export default function ReceptionistLayout() {
         </nav>
 
         {/* Bottom Logout */}
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-3.5 border-t border-slate-100">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-950/50 hover:text-red-300 transition-colors cursor-pointer"
+            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-4 h-4 text-rose-500" />
             <span>Logout Staff</span>
           </button>
         </div>
@@ -115,26 +114,29 @@ export default function ReceptionistLayout() {
       {mobileDrawerOpen && (
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div
-            className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-2xs"
             onClick={() => setMobileDrawerOpen(false)}
           />
-          <div className="relative flex flex-col w-72 max-w-xs bg-slate-900 text-slate-300 shadow-2xl z-50">
-            <div className="p-5 border-b border-slate-800 flex justify-between items-center">
+          <div className="relative flex flex-col w-72 max-w-xs bg-white text-slate-800 shadow-xl z-50 border-r border-slate-200">
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+                <div className="w-8 h-8 rounded-lg bg-teal-600 flex items-center justify-center text-white shadow-xs">
                   <Building2 className="w-5 h-5" />
                 </div>
-                <span className="text-base font-bold text-white">Reception Desk</span>
+                <div>
+                  <span className="text-base font-bold text-slate-900 leading-tight block">AIQ Tracker</span>
+                  <span className="text-[10px] font-bold text-teal-600 tracking-wider uppercase">Reception Desk</span>
+                </div>
               </div>
               <button
                 onClick={() => setMobileDrawerOpen(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+            <nav className="flex-1 p-3.5 space-y-1 overflow-y-auto">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
@@ -143,10 +145,10 @@ export default function ReceptionistLayout() {
                     key={item.path}
                     to={item.path}
                     onClick={() => setMobileDrawerOpen(false)}
-                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-colors ${
                       active
-                        ? 'bg-blue-600 text-white font-semibold'
-                        : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
+                        ? 'bg-teal-600 text-white shadow-xs'
+                        : 'text-slate-600 hover:bg-teal-50 hover:text-teal-800'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -154,7 +156,7 @@ export default function ReceptionistLayout() {
                       <span>{item.label}</span>
                     </div>
                     {item.badge && (
-                      <span className="text-[11px] px-2 py-0.5 rounded-full font-bold bg-blue-900 text-blue-300">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-teal-100 text-teal-800">
                         {item.badge}
                       </span>
                     )}
@@ -163,10 +165,10 @@ export default function ReceptionistLayout() {
               })}
             </nav>
 
-            <div className="p-4 border-t border-slate-800">
+            <div className="p-4 border-t border-slate-100">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-950/50 transition-colors"
+                className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
                 <span>Logout</span>
@@ -180,21 +182,21 @@ export default function ReceptionistLayout() {
       <div className="flex-1 flex flex-col min-w-0">
         
         {/* RECEPTIONIST TOP HEADER */}
-        <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-3.5 shadow-xs">
+        <header className="bg-white border-b border-slate-200/80 sticky top-0 z-40 px-4 sm:px-6 lg:px-8 py-3.5 shadow-2xs">
           <div className="flex items-center justify-between gap-4">
             
             {/* Mobile Menu + Greeting */}
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setMobileDrawerOpen(true)}
-                className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+                className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
                 aria-label="Open navigation menu"
               >
                 <Menu className="w-5 h-5" />
               </button>
 
               <div>
-                <h1 className="text-base sm:text-xl font-bold text-slate-900 flex items-center gap-1.5 leading-tight">
+                <h1 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-1.5 leading-tight">
                   Good Morning, {staffName} 👋
                 </h1>
                 <p className="text-xs text-slate-500 hidden sm:block">
@@ -205,25 +207,25 @@ export default function ReceptionistLayout() {
 
             {/* Header Right Side */}
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-800 text-xs font-bold border border-blue-200">
-                <Building2 className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-50 text-teal-800 text-xs font-semibold border border-teal-200/80 shadow-2xs">
+                <Building2 className="w-3.5 h-3.5 text-teal-600" />
                 OPD Front Desk &bull; REC001
               </span>
 
               <Link
                 to="/reception/notifications"
-                className="relative p-2 text-slate-600 hover:text-blue-700 hover:bg-slate-100 rounded-xl transition-colors"
+                className="relative p-2 text-slate-600 hover:text-teal-700 hover:bg-teal-50/60 rounded-xl transition-colors"
                 title="Operational Notifications"
               >
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-blue-600 ring-2 ring-white" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-teal-600 ring-2 ring-white" />
               </Link>
 
               <Link
                 to="/reception/profile"
-                className="flex items-center gap-2 pl-2 pr-3 py-1 bg-slate-100 hover:bg-slate-200 rounded-full border border-slate-200 transition-colors"
+                className="flex items-center gap-2 pl-2 pr-3 py-1 bg-slate-50 hover:bg-teal-50/70 rounded-full border border-slate-200/80 hover:border-teal-200 transition-colors"
               >
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center">
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-600 to-cyan-700 text-white font-bold text-xs flex items-center justify-center shadow-2xs">
                   {staffName.charAt(0)}
                 </div>
                 <span className="text-xs font-semibold text-slate-700 hidden sm:inline">
