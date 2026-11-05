@@ -1,10 +1,11 @@
+
 import sys
 import json
 import joblib
 import pandas as pd
 from pathlib import Path
 
-MODEL_PATH = Path(__file__).parent / "aiq_d001_wait_time_model.pkl"
+MODEL_PATH = Path(__file__).parent / "aiq_d001_wait_time_model_emergency_v2.pkl"
 
 FEATURES = [
     "patients_ahead",
@@ -23,6 +24,7 @@ def main():
     data = json.load(sys.stdin)
 
     model = joblib.load(MODEL_PATH)
+
     input_df = pd.DataFrame(
         [{feature: data[feature] for feature in FEATURES}],
         columns=FEATURES,
@@ -32,7 +34,7 @@ def main():
 
     print(json.dumps({
         "predicted_wait_minutes": round(max(0, prediction), 2),
-        "model_version": "RF-1.0",
+        "model_version": "RF-EMERGENCY-V2",
     }))
 
 if __name__ == "__main__":
