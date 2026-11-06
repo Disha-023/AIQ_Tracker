@@ -80,7 +80,46 @@ export const apiService = {
     } catch (err) {
       return { success: false, message: 'Unable to connect to backend server' };
     }
+  },
+
+  /**
+   * GPS Driving Directions (TomTom Primary with Geoapify Fallback)
+   * Calls Express GET /api/directions?startLon=...&startLat=...&endLon=...&endLat=...
+   */
+  async getDirections(startLon, startLat, endLon, endLat) {
+    try {
+      const sLon = Number(startLon);
+      const sLat = Number(startLat);
+      const eLon = Number(endLon);
+      const eLat = Number(endLat);
+
+      if (
+        !Number.isFinite(sLon) || !Number.isFinite(sLat) ||
+        !Number.isFinite(eLon) || !Number.isFinite(eLat)
+      ) {
+        return { success: false, error: 'Invalid coordinates provided for route calculation.' };
+      }
+
+      const url = `${API_BASE_URL}/directions?startLon=${encodeURIComponent(sLon)}&startLat=${encodeURIComponent(sLat)}&endLon=${encodeURIComponent(eLon)}&endLat=${encodeURIComponent(eLat)}`;
+      const res = await fetch(url);
+
+      let data;
+      try {
+        data = await res.json();
+      } catch (jsonErr) {
+        return { success: false, error: `Directions server returned invalid response format (HTTP ${res.status}).` };
+      }
+
+      if (!res.ok) {
+        return { success: false, error: data?.error || `Failed to fetch directions from server (HTTP ${res.status}).` };
+      }
+
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: 'Unable to connect to directions server. Please check your network connection.' };
+    }
   }
 };
+
 
 export default apiService;

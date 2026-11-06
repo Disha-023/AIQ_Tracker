@@ -50,5 +50,28 @@ export const predictionService = {
         lastUpdated: 'Just now'
       }
     };
+  },
+
+  /**
+   * Fetch Wait-Time Prediction from Database
+   */
+  async fetchPrediction(queueEntryId) {
+    try {
+      const res = await fetch(`http://localhost:5000/api/predictions/${queueEntryId}`);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.error?.message || 'Failed to fetch prediction.');
+      }
+      return {
+        estimatedWaitMin: json.data.minimum_wait_minutes,
+        estimatedWaitMax: json.data.maximum_wait_minutes,
+        confidence: Math.round(parseFloat(json.data.confidence_score)),
+        algorithmVersion: json.data.model_version,
+        predictedAt: json.data.prediction_time
+      };
+    } catch (err) {
+      console.error('fetchPrediction error:', err);
+      throw err;
+    }
   }
 };
